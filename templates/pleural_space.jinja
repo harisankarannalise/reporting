@@ -1,0 +1,39 @@
+
+{% if calcified_pleural_plaque %}
+Calcified pleural plaques. 
+{% endif %}
+
+{% if diffuse_pleural_thickening %}
+Diffuse pleural thickening.
+{% endif %}
+
+
+{% if loculated_effusion and effusion_segmentation_laterality in ['left', 'right'] %}
+Loculated {{ effusion_segmentation_laterality }} pleural effusion. 
+{% endif %}
+{% if loculated_effusion and effusion_segmentation_laterality in ['bilateral'] %}
+Loculated {{ effusion_segmentation_laterality }} pleural effusions. 
+{% endif %}
+
+{% if simple_effusion and effusion_segmentation_laterality in ['left', 'right'] %}
+{{ effusion_segmentation_laterality }} pleural effusion. 
+{% endif %}
+{% if simple_effusion and effusion_segmentation_laterality in ['bilateral'] %}
+{{ effusion_segmentation_laterality }} pleural effusions. 
+{% endif %}
+
+
+{% if pleural_mass and pleural_mass_segmentation_laterality in ['left', 'right'] %}
+Focal {{ pleural_mass_segmentation_laterality }} pleural thickening/mass. 
+{% endif %}
+{% if pleural_mass and pleural_mass_segmentation_laterality in ['bilateral'] %}
+Focal {{ pleural_mass_segmentation_laterality }} pleural thickening/masses. 
+{% endif %}
+
+{% if simple_pneumothorax and pneumothorax_segmentation_laterality in ['left', 'right', 'bilateral'] %}
+{{ pneumothorax_segmentation_laterality }} pneumothorax . 
+{% endif %}
+
+{% if tension_pneumothorax and pneumothorax_segmentation_laterality in ['left', 'right', 'bilateral'] %}
+{{ pneumothorax_segmentation_laterality }} pneumothorax with features of tension. 
+{% endif %}

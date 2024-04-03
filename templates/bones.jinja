@@ -1,0 +1,145 @@
+
+{% if acute_rib_fracture and acute_rib_fracture_segmentation_zone2x2 %}
+Acute fractures of the {{ acute_rib_fracture_segmentation_zone2x2 }} rib(s).
+{% endif %}
+
+{% if acute_clavicle_fracture and acute_clavicle_fracture_laterality in ['left', 'right'] %}
+An acute fracture is noted in the {{ acute_clavicle_fracture_laterality }} clavicle. 
+{% endif %}
+{% if acute_clavicle_fracture and acute_clavicle_fracture_laterality in ['bilateral'] %}
+Acute {{ acute_clavicle_fracture_laterality }} clavicle fractures are noted. 
+{% endif %}
+
+{% if chronic_clavicle_fracture %}
+Chronic clavicle fracture(s) noted.
+{% endif %}
+
+{% if acute_humerus_fracture and acute_humerus_fracture_laterality in ['left', 'right'] %}
+An acute fracture is noted in the {{ acute_humerus_fracture_laterality }} visualised humerus. 
+{% endif %}
+{% if acute_humerus_fracture and acute_humerus_fracture_laterality in ['bilateral'] %}
+Acute {{ acute_humerus_fracture_laterality }} humeral fractures are noted. 
+{% endif %}
+
+
+{% if chronic_humerus_fracture %}
+Chronic humeral fracture(s) noted.
+{% endif %}
+
+{% if clavicle_fixation and clavicle_fixation_laterality in ['left', 'right'] %}
+Fixation of the {{ clavicle_fixation_laterality }} clavicle.
+{% endif %}
+{% if clavicle_fixation and clavicle_fixation_laterality in ['bilateral'] %}
+Fixation of {{ clavicle_fixation_laterality }} clavicles.
+{% endif %}
+
+{% if chronic_humerus_fracture %}
+Chronic humeral fracture(s) noted.
+{% endif %}
+{% if rib_fixation and rib_fixation_laterality in ['left', 'right', 'bilateral'] %}
+Internal {{ rib_fixation_laterality }} rib fixation noted.
+{% endif %}
+
+{% if rib_resection %}
+Rib resection noted.
+{% endif %}
+{% if chronic_rib_fracture %}
+Chronic rib fractures noted.
+{% endif %}
+
+{% if rotator_cuff_anchor and rotator_cuff_anchor_laterality in ['left', 'right', 'bilateral'] %}
+{{ rotator_cuff_anchor_laterality }} rotator cuff anchors noted.
+{% endif %}
+
+{% if scapular_fracture and scapular_fracture_laterality in ['left', 'right'] %}
+Fracture of the {{ scapular_fracture_laterality }} scapula.
+{% endif %}
+{% if scapular_fracture and scapular_fracture_laterality in ['bilateral'] %}
+Fracture of {{ scapular_fracture_laterality }} scapulae.
+{% endif %}
+
+{% if shoulder_dislocation and shoulder_dislocation_laterality in ['left', 'right', 'bilateral'] %}
+{{ shoulder_dislocation_laterality }} suspected shoulder dislocation.
+{% endif %}
+
+{% if shoulder_arthritis %}
+Shoulder arthritis noted. 
+{% endif %}
+
+{% if shoulder_fixation and shoulder_fixation_laterality in ['left', 'right', 'bilateral'] %}
+Internal fixation {{ shoulder_fixation_laterality }} shoulder girdle.
+{% endif %}
+
+{% if shoulder_replacement and shoulder_replacement_laterality in ['left', 'right'] %}
+{{ shoulder_replacement_laterality }} shoulder replacement.
+{% endif %}
+{% if shoulder_replacement and shoulder_replacement_laterality in [ 'bilateral'] %}
+{{ shoulder_replacement_laterality }} shoulder replacements.
+{% endif %}
+
+
+{% if dish %}
+Appearance of diffuse idiopathic skeletal hyperostosis.
+{% endif %}
+
+{% if pectus_carinatum %}
+Pectus carinatum noted.
+{% endif %}
+
+{% if pectus_excavatum %}
+Pectus excavatum noted.
+{% endif %}
+
+
+{% if clavicle_lesion and clavicle_lesion_segmentation_laterality in ['left', 'right'] %}
+Focal lesion(s) within the {{ clavicle_lesion_segmentation_laterality}} clavicle.
+{% endif %}
+
+{% if clavicle_lesion and clavicle_lesion_segmentation_laterality in ['bilateral'] %}
+Focal lesion(s) within {{ clavicle_lesion_segmentation_laterality}} clavicles.
+{% endif %}
+
+{% if humeral_lesion and humeral_lesion_segmentation_laterality in ['left', 'right', 'bilateral'] %}
+Focal lesion(s) within the {{ humeral_lesion_segmentation_laterality}} humerus.
+{% endif %}
+
+{% if rib_lesion and rib_lesion_segmentation_zone2x2 %}
+Focal lesion(s) within the {{ rib_lesion_segmentation_zone2x2 }} rib(s).
+{% endif %}
+
+{% if scapular_lesion and scapular_lesion_segmentation_laterality in ['left', 'right'] %}
+Focal lesion within the {{ scapular_lesion_segmentation_laterality}} scapula.
+{% endif %}
+
+{% if scapular_lesion and scapular_lesion_segmentation_laterality in ['bilateral'] %}
+Focal lesions within the {{ scapular_lesion_segmentation_laterality}} scapulae.
+{% endif %}
+
+{% if spine_lesion %}
+Focal lesion within the thoracic spine.
+{% endif %}
+
+
+{% if spine_wedge_fracture %}
+Vertebral compression fracture noted.
+{% endif %}
+
+{% if scoliosis %}
+Thoracic scoliosis noted. 
+{% endif %}
+
+{% if kyphosis %}
+Thoracic kyphosis is noted.
+{% endif %}
+
+{% if osteopaenia %}
+Vertebrae appear reduced in density.
+{% endif %}
+
+{% if spinal_fixation %}
+Surgical fixation of the spine.
+{% endif %}
+
+{% if spine_arthritis %}
+Degenerative changes of the spine noted.
+{% endif %}

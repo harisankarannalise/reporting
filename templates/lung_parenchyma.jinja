@@ -1,0 +1,159 @@
+
+{% if diffuse_airspace_opacity and diffuse_airspace_opacity_laterality in ['left', 'right'] %}
+Diffuse, ill-defined airspace opacity in the {{ diffuse_airspace_opacity_laterality }} lung.
+{% endif %}
+{% if diffuse_airspace_opacity and diffuse_airspace_opacity_laterality in ['bilateral'] %}
+Diffuse, ill-defined airspace opacity in {{ diffuse_airspace_opacity_laterality }} lungs.
+{% endif %}
+
+{% if diffuse_upper_airspace_opacity and diffuse_upper_airspace_opacity_laterality in ['left', 'right'] %}
+Diffuse, ill-defined airspace opacity in the {{ diffuse_upper_airspace_opacity_laterality }} upper lung.
+{% endif %}
+{% if diffuse_upper_airspace_opacity and diffuse_upper_airspace_opacity_laterality in ['bilateral'] %}
+Diffuse, ill-defined airspace opacity in {{ diffuse_upper_airspace_opacity_laterality }} upper lungs.
+{% endif %}
+
+{% if diffuse_lower_airspace_opacity and diffuse_lower_airspace_opacity_laterality in ['left', 'right'] %}
+Diffuse, ill-defined airspace opacity in the {{ diffuse_lower_airspace_opacity_laterality }} lower lung.
+{% endif %}
+{% if diffuse_lower_airspace_opacity and diffuse_lower_airspace_opacity_laterality in ['bilateral'] %}
+Diffuse, ill-defined airspace opacity in {{ diffuse_lower_airspace_opacity_laterality }} lower lungs.
+{% endif %}
+
+
+{% if interstitial_thickening_diffuse and interstitial_thickening_diffuse_laterality in ['left', 'right', 'bilateral'] %}
+Diffuse {{ interstitial_thickening_diffuse_laterality }} fibrotic changes with preserved lung volume.
+{% endif %}
+
+{% if interstitial_thickening_lower and interstitial_thickening_lower_laterality in ['left', 'right', 'bilateral'] %}
+Basal predominant {{ interstitial_thickening_lower_laterality }} reticulations noted without significant volume loss.
+{% endif %}
+
+{% if interstitial_thickening_upper and interstitial_thickening_upper_laterality in ['left', 'right', 'bilateral'] %}
+Upper zone predominant {{ interstitial_thickening_upper_laterality }} reticular changes without volume loss.
+{% endif %}
+
+{% if interstitial_thickening_volloss_diffuse and interstitial_thickening_volloss_diffuse_laterality in ['left', 'right', 'bilateral'] %}
+Diffuse {{ interstitial_thickening_volloss_diffuse_laterality }} fibrotic changes with reduced lung volumes.
+{% endif %}
+
+{% if interstitial_thickening_volloss_lower and interstitial_thickening_volloss_lower_laterality in ['left', 'right', 'bilateral'] %}
+{{ interstitial_thickening_volloss_lower_laterality }} lower zone predominant fibrotic changes with volume loss.
+{% endif %}
+
+{% if interstitial_thickening_volloss_upper and interstitial_thickening_volloss_upper_laterality in ['left', 'right', 'bilateral'] %}
+{{ interstitial_thickening_volloss_upper_laterality }} upper zone predominant fibrotic changes with volume loss.
+{% endif %}
+
+{% if lung_collapse and lung_collapse_laterality in ['left', 'right', 'bilateral'] %}
+Marked {{ lung_collapse_laterality }} lung collapse.
+{% endif %}
+
+{% if lung_resection_volloss and lung_resection_volloss_laterality in ['left', 'right', 'bilateral'] %}
+Reduced {{ lung_resection_volloss_laterality }} lung volume, previous resection noted.
+{% endif %}
+
+{% if miliary and miliary_laterality in ['left', 'right', 'bilateral'] %}
+Diffuse {{ miliary_laterality }} lung opacities noted.
+{% endif %}
+
+{% if diffuse_perihilar_airspace_opacity and diffuse_perihilar_airspace_opacity_laterality in ['left', 'right', 'bilateral'] %}
+Diffuse {{ diffuse_perihilar_airspace_opacity_laterality }} perihilar airspace opacity.
+{% endif %}
+
+
+{% if calcified_pulmonary_mass and lesion_segmentation_laterality in ['left', 'right', 'bilateral'] %}
+{{ lesion_segmentation_laterality }} calcified lung lesion.
+{% endif %}
+
+{% if cavitating_mass and lesion_segmentation_laterality in ['left', 'right', 'bilateral'] %}
+Cavitating lesion in the {{ lesion_segmentation_laterality }} lung.
+{% endif %}
+
+{% if cavitating_mass_internal_content and lesion_segmentation_laterality in ['left', 'right', 'bilateral'] %}
+Cavitating lesion in the {{ lesion_segmentation_laterality }} lung with fluid level.
+{% endif %}
+
+{% if linear_atelectasis and collapse_segmentation_zone2x2 %}
+Atelectasis noted in the {{ collapse_segmentation_zone2x2 }} lung.
+{% endif %}
+
+{% if segmental_collapse and collapse_segmentation_zone2x2 %}
+{{ collapse_segmentation_zone2x2 }} zone collapse.
+{% endif %}
+
+
+
+
+{% if multifocal_airspace_opacity and airspace_opacity_segmentation_laterality in ['left', 'right'] %}
+Multifocal airspace opacities in the {{ airspace_opacity_segmentation_laterality }} lung.
+{% endif %}
+{% if multifocal_airspace_opacity and airspace_opacity_segmentation_laterality in ['bilateral'] %}
+Multifocal airspace opacities in {{ airspace_opacity_segmentation_laterality }} lungs.
+{% endif %}
+
+{% if multiple_pulmonary_masses and lesion_segmentation_laterality in ['left', 'right'] %}
+Multiple lung lesions noted in the {{ lesion_segmentation_laterality }} lung.
+{% endif %}
+{% if multiple_pulmonary_masses and lesion_segmentation_laterality in ['bilateral'] %}
+Multiple lung lesions noted in {{ lesion_segmentation_laterality }} lungs.
+{% endif %}
+
+{% if focal_airspace_opacity and airspace_opacity_segmentation_zone2x2 %}
+Focal airspace opacity in the {{ airspace_opacity_segmentation_zone2x2 }} zone.
+{% endif %}
+
+{% if single_pulmonary_mass and lesion_segmentation_zone2x2  %}
+Focal well defined mass(es) in the {{ lesion_segmentation_zone2x2 }} zone.
+{% endif %}
+
+{% if single_pulmonary_nodule and lesion_segmentation_zone2x2 %}
+Focal well defined nodule(s) in the {{ lesion_segmentation_zone2x2 }} zone.
+{% endif %}
+
+{% if airway_stent %}Airways stent present.{% endif %}
+{% if pulmonary_congestion %}Upper zone venous diversion indicating pulmonary congestion.{% endif %}
+
+
+{% if peribronchial_cuffing %}
+Peribronchial cuffing noted.
+{% endif %}
+
+{% if lung_sutures %}
+Lung sutures noted.
+{% endif %}
+
+{% if hyperinflation %}
+Lungs are hyperinflated.
+{% endif %}
+
+
+{% if bullae_upper %}
+Upper zone predominant bullae.
+{% endif %}
+
+
+{% if bullae_lower %}
+Multiple bullae throughout the lungs.
+{% endif %}
+
+{% if bullae_diffuse %}
+Multiple bullae throughout the lungs.
+{% endif %}
+
+{% if hyperlucency %}
+Reduced lung markings.
+{% endif %}
+
+{% if calcified_granuloma %}
+Calcified granuloma noted.
+{% endif %}
+
+{% if bronchiectasis %}
+Bronchiectasis noted.
+{% endif %}
+
+{% if calcified_granuloma and lesion_segmentation_zone2x2 %}
+Calcified granuloma noted in the {{ lesion_segmentation_zone2x2 }} zone.
+{% endif %}
+

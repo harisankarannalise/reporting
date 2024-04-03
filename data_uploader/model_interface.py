@@ -384,6 +384,15 @@ def get(accession: str, transport: WebTransport, get_timeout: int = 300) -> Dict
     }
 
 
+@retry(retries=3)
+def get_study_details(transport: WebTransport) -> requests.Response:
+    response = transport.get(path='/v1/studies', params=None)
+    # print(f'Response: {response.json()}')
+    # with open('output/studies_response.json', 'w+') as json_file:
+    #     json_file.write(json.dumps(response.json()))
+    return response
+
+
 class ModelInterface:
     """Class to interact with the model API.
     Performs uploading of DICOMs, intitation of prediction, fetching of results, and parsing of results.
@@ -560,3 +569,7 @@ class ModelInterface:
         accessions = []
 
         return futures
+    
+    def get_studies(self):
+        response = get_study_details(self.transport)
+        return response

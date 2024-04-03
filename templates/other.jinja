@@ -1,0 +1,63 @@
+
+{% if axillary_clips and axillary_clips_laterality in ['left', 'right', 'bilateral'] %}
+{{ axillary_clips_laterality }} axillary clips are noted.
+{% endif %}
+
+
+{% if neck_clips and neck_clips_laterality in ['left', 'right', 'bilateral'] %}
+Surgical clips in the {{ neck_clips_laterality }} neck.
+{% endif %}
+
+{% if subcutaneous_emphysema and subcutaneous_emphysema_laterality in ['left', 'right', 'bilateral'] %}
+{{ subcutaneous_emphysema_laterality }} subcutaneous emphysema.
+{% endif %}
+
+
+{% if nipple_shadow %}
+Opacity in lower zone suspected to represent a nipple shadow.
+{% endif %}
+
+{% if mastectomy %}
+Mastectomy noted.
+{% endif %}
+
+
+{% if malpositioned_gastric_band %}
+Suboptimally positioned gastric band noted.
+{% endif %}
+
+
+{% if gastric_band %}
+Gastric band present.
+{% endif %}
+
+{% if internal_foreign_body %}
+Internal foreign body noted.
+{% endif %}
+
+{% if diaphragmatic_eventration %}
+Diaphragm eventration noted.
+{% endif %}
+
+{% if diaphragmatic_elevation %}
+Raised diaphragm noted.
+{% endif %}
+
+{% if calcified_neck_nodes %}
+Calcified neck nodes noted.
+{% endif %}
+
+{% if calcified_axillary_nodes %}
+Calcified axillary nodes noted.
+{% endif %}
+
+{% if breast_implant %}
+Breast prostheses noted.
+{% endif %}
+
+{% if abdominal_clips %}Surgical clips present in the abdomen.{% endif %}
+{% if biliary_stent %}Biliary stent in situ.{% endif %}
+{% if distended_bowel %}Distended bowel loops seen in the imaged upper abdomen.{% endif %}
+{% if gallstones %}Gallstones noted.{% endif %}
+{% if hiatus_hernia %}Hiatus hernia evident.{% endif %}
+{% if subdiaphragmatic_gas %}Appearances suspicious for pneumoperitoneum.{% endif %}
