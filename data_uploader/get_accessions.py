@@ -25,26 +25,26 @@ logger = logging.getLogger(__name__)
 
 
 def main(api_host, client_id, client_secret):
-    # mi = model_interface.ModelInterface(
-    #     api_host, client_id, client_secret, wait_time=5, max_workers=1
-    # )
-    #
-    # results = mi.get_studies()
-    # data = results.json()
-    #
-    # # Extract accession numbers
-    # accessions = [study["accessionNumber"] for study in data["studies"]]
-    # accessions_list_for_prediction = accessions[0:20]
-    #
-    # # Get prediction results from BE
-    # results = mi.bulk_get(accessions_list_for_prediction)
-    # for result in results:
-    #     json_file = path.join(output_location, f"{result['accession']}.json")
-    #     with open(json_file, 'w') as fp:
-    #         json.dump(result, fp)
-    #
-    # # Generate txt report
-    # generate_txt_report('output', 'reports')
+    mi = model_interface.ModelInterface(
+        api_host, client_id, client_secret, wait_time=5, max_workers=1
+    )
+
+    results = mi.get_studies()
+    data = results.json()
+
+    # Extract accession numbers
+    accessions = [study["accessionNumber"] for study in data["studies"]]
+    accessions_list_for_prediction = accessions[0:20]
+
+    # Get prediction results from BE
+    results = mi.bulk_get(accessions_list_for_prediction)
+    for result in results:
+        json_file = path.join(output_location, f"{result['accession']}.json")
+        with open(json_file, 'w') as fp:
+            json.dump(result, fp)
+
+    # Generate txt report
+    generate_txt_report('output', 'reports')
 
     # Create excel report
     # Create a new Workbook
