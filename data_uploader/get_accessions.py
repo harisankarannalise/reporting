@@ -25,23 +25,23 @@ logger = logging.getLogger(__name__)
 
 
 def main(api_host, client_id, client_secret):
-    # mi = model_interface.ModelInterface(
-    #     api_host, client_id, client_secret, wait_time=5, max_workers=1
-    # )
-    #
-    # results = mi.get_studies()
-    # data = results.json()
-    #
-    # # Extract accession numbers
-    # accessions = [study["accessionNumber"] for study in data["studies"]]
-    # accessions_list_for_prediction = accessions[0:20]
-    #
-    # # Get prediction results from BE
-    # results = mi.bulk_get(accessions_list_for_prediction)
-    # for result in results:
-    #     json_file = path.join(output_location, f"{result['accession']}.json")
-    #     with open(json_file, 'w') as fp:
-    #         json.dump(result, fp)
+    mi = model_interface.ModelInterface(
+        api_host, client_id, client_secret, wait_time=5, max_workers=1
+    )
+
+    results = mi.get_studies()
+    data = results.json()
+
+    # Extract accession numbers
+    accessions = [study["accessionNumber"] for study in data["studies"]]
+    accessions_list_for_prediction = accessions[0:20]
+
+    # Get prediction results from BE
+    results = mi.bulk_get(accessions_list_for_prediction)
+    for result in results:
+        json_file = path.join(output_location, f"{result['accession']}.json")
+        with open(json_file, 'w') as fp:
+            json.dump(result, fp)
 
     # Generate txt report
     generate_txt_report('output', 'reports')
@@ -75,16 +75,26 @@ def main(api_host, client_id, client_secret):
         with open(f'output/{accession_number}.json', 'r') as json_file:
             model_output = json.load(json_file)
 
-        finding_label = []
+        finding_labels = []
 
+        # Extract relevant findings
         relevant_findings = model_output["classification"]["findings"]["vision"]["study"]["classifications"]["relevant"]
+
+        # Define a custom sorting key function
+        def sorting_key(finding):
+            return (finding["assignPriorityId"], finding["displayOrder"])
+
+        # Sort the findings
+        sorted_findings = []
         for group in relevant_findings:
             findings_list = group["findings"]
-            for finding in findings_list:
-                finding_label.append(f'{finding["labelName"]}\n')
+            sorted_findings.extend(sorted(findings_list, key=sorting_key))
+
+        # Extract the labels after sorting
+        finding_labels = [f'{finding["labelName"]}\n' for finding in sorted_findings]
 
         embedded_string = ''.join(lines)
-        findings_string = ''.join(finding_label)
+        findings_string = ''.join(finding_labels)
 
         folder_path = os.path.join(pwd, 'reports', f'{accession_number}')
         link_to_folder = f'file://{folder_path}'
@@ -108,11 +118,15 @@ def main(api_host, client_id, client_secret):
         column = col[0].column_letter
         for cell in col:
             try:
+                cell.alignment = Alignment(horizontal='left',
+                                           vertical='top',
+                                           wrap_text=True,
+                                           shrink_to_fit=True)
                 if len(str(cell.value)) > max_length:
                     max_length = len(cell.value)
             except:
                 pass
-        adjusted_width = (max_length + 2)
+        adjusted_width = (max_length + 2) * 1.2
         if column == 'C':
             ws.column_dimensions[column].width = 125
         elif column == 'B':
