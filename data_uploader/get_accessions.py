@@ -25,23 +25,23 @@ logger = logging.getLogger(__name__)
 
 
 def main(api_host, client_id, client_secret):
-    mi = model_interface.ModelInterface(
-        api_host, client_id, client_secret, wait_time=5, max_workers=1
-    )
-
-    results = mi.get_studies()
-    data = results.json()
-
-    # Extract accession numbers
-    accessions = [study["accessionNumber"] for study in data["studies"]]
-    accessions_list_for_prediction = accessions[0:20]
-
-    # Get prediction results from BE
-    results = mi.bulk_get(accessions_list_for_prediction)
-    for result in results:
-        json_file = path.join(output_location, f"{result['accession']}.json")
-        with open(json_file, 'w') as fp:
-            json.dump(result, fp)
+    # mi = model_interface.ModelInterface(
+    #     api_host, client_id, client_secret, wait_time=5, max_workers=1
+    # )
+    #
+    # results = mi.get_studies()
+    # data = results.json()
+    #
+    # # Extract accession numbers
+    # accessions = [study["accessionNumber"] for study in data["studies"]]
+    # accessions_list_for_prediction = accessions[0:20]
+    #
+    # # Get prediction results from BE
+    # results = mi.bulk_get(accessions_list_for_prediction)
+    # for result in results:
+    #     json_file = path.join(output_location, f"{result['accession']}.json")
+    #     with open(json_file, 'w') as fp:
+    #         json.dump(result, fp)
 
     # Generate txt report
     generate_txt_report('output', 'reports')
@@ -68,7 +68,7 @@ def main(api_host, client_id, client_secret):
 
     accessions_list_for_prediction = ['GUBEW9QGY4ASYUPL', 'PUN5YZFXNJUHMMKT', 'K2PHME2TSFZKJPOG', 'FVMZKRJCHSF3BZ6U', 'PWZAOGPDS6F44GVM', 'GVNHRIX3USQYAXHY', 'HCR9WTFX9MRBKTHM', 'E2NCJWFWMZXXVFEE', 'MA8EID3SSFRQYPK6', 'IFY7KSWEYPYTZUHR', '4H2JXTHT9G9UIXFI', 'PT4QKF3QEEYCLNNF', '29b2328160a72d32', '2b08a0a785f6b', 'cc64e893acd99', '3dddd317e4b7e', 'd12c5785a86a', '87c1ff9de4abd', 'b9c43ecebd12f', '932062ca961fc']
     for accession_number in accessions_list_for_prediction:
-        with open(f'reports/{accession_number}.txt', 'r') as file:
+        with open(f'reports/{accession_number}/{accession_number}.txt', 'r') as file:
             # Read all lines from the file into a list
             lines = file.readlines()
 
@@ -86,7 +86,7 @@ def main(api_host, client_id, client_secret):
         embedded_string = ''.join(lines)
         findings_string = ''.join(finding_label)
 
-        folder_path = os.path.join(pwd, 'reports', f'{accession_number}.txt')
+        folder_path = os.path.join(pwd, 'reports', f'{accession_number}')
         link_to_folder = f'file://{folder_path}'
 
         new_row_data = [
@@ -94,7 +94,7 @@ def main(api_host, client_id, client_secret):
             findings_string,  # List of Findings
             embedded_string,  # Report Embedded
             link_to_folder,  # Link to Report Folder
-            "http://example.com/capture4"  # Link to Secondary Capture Folder
+            "<PLACEHOLDER>"  # Link to Secondary Capture Folder
         ]
         ws.append(new_row_data)
 
@@ -102,13 +102,27 @@ def main(api_host, client_id, client_secret):
         cell = ws.cell(row=ws.max_row, column=4)
         cell.hyperlink = link_to_folder
 
-        for col in range(1, len(new_row_data) + 1):
-            ws.cell(row=ws.max_row, column=col).alignment = Alignment(horizontal='general',
-            vertical='bottom',
-            text_rotation=0,
-            wrap_text=False,
-            shrink_to_fit=False,
-            indent=0)
+    # Set column widths to fit the content
+    for col in ws.columns:
+        max_length = 0
+        column = col[0].column_letter
+        for cell in col:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2)
+        if column == 'C':
+            ws.column_dimensions[column].width = 125
+        elif column == 'B':
+            ws.column_dimensions[column].width = 75
+        else:
+            ws.column_dimensions[column].width = adjusted_width
+
+    # Apply text wrap to the entire sheet
+    for row_number, row in enumerate(ws.iter_rows(), start=2):
+        ws.row_dimensions[row_number].height = 280
 
     # Save the workbook
     wb.save("accession_data.xlsx")

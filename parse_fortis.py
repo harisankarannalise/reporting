@@ -211,16 +211,19 @@ def generate_txt_report(input_dir, output_dir):
                         output = defaults[template_name]                    
                 template_components[template_name] = output
 
-
         template = env.get_template('base_report.jinja')
         output = template.render(**template_components)
 
-        output_path = os.path.join(output_dir, f"{accession}.txt")
+        study_output_dir = os.path.join(output_dir, accession)
+        if not os.path.exists(study_output_dir):
+            os.makedirs(study_output_dir)
+
+        output_path = os.path.join(study_output_dir, f"{accession}.txt")
         with open(output_path, "w") as f:
             f.write(output)
 
-        print (accession)
-        print ('*******************************')
+        print(accession)
+        print('*******************************')
 
     end_time = time.time()
 
