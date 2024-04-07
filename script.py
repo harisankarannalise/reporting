@@ -25,26 +25,26 @@ logger = logging.getLogger(__name__)
 
 
 def main(api_host, client_id, client_secret):
-    mi = model_interface.ModelInterface(
-        api_host, client_id, client_secret, wait_time=5, max_workers=1
-    )
-
-    results = mi.get_studies()
-    data = results.json()
-
-    # Extract accession numbers
-    accessions = [study["accessionNumber"] for study in data["studies"]]
-    accessions_list_for_prediction = accessions[0:20]
-
-    # Get prediction results from BE
-    results = mi.bulk_get(accessions_list_for_prediction)
-    for result in results:
-        json_file = path.join(output_location, f"{result['accession']}.json")
-        with open(json_file, 'w') as fp:
-            json.dump(result, fp)
-
-    # Generate txt report
-    generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')
+    # mi = model_interface.ModelInterface(
+    #     api_host, client_id, client_secret, wait_time=5, max_workers=1
+    # )
+    #
+    # results = mi.get_studies()
+    # data = results.json()
+    #
+    # # Extract accession numbers
+    # accessions = [study["accessionNumber"] for study in data["studies"]]
+    # accessions_list_for_prediction = accessions[0:20]
+    #
+    # # Get prediction results from BE
+    # results = mi.bulk_get(accessions_list_for_prediction)
+    # for result in results:
+    #     json_file = path.join(output_location, f"{result['accession']}.json")
+    #     with open(json_file, 'w') as fp:
+    #         json.dump(result, fp)
+    #
+    # # Generate txt report
+    # generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')
 
     # Create excel report
     # Create a new Workbook
@@ -66,7 +66,7 @@ def main(api_host, client_id, client_secret):
     ws.append(column_headings)
     pwd = os.getcwd()
 
-    accessions_list_for_prediction = ['GUBEW9QGY4ASYUPL', 'PUN5YZFXNJUHMMKT', 'K2PHME2TSFZKJPOG', 'FVMZKRJCHSF3BZ6U', 'PWZAOGPDS6F44GVM', 'GVNHRIX3USQYAXHY', 'HCR9WTFX9MRBKTHM', 'E2NCJWFWMZXXVFEE', 'MA8EID3SSFRQYPK6', 'IFY7KSWEYPYTZUHR', '4H2JXTHT9G9UIXFI', 'PT4QKF3QEEYCLNNF', '29b2328160a72d32', '2b08a0a785f6b', 'cc64e893acd99', '3dddd317e4b7e', 'd12c5785a86a', '87c1ff9de4abd', 'b9c43ecebd12f', '932062ca961fc']
+    accessions_list_for_prediction = ['JPCLN001', 'JPCLN003', 'JPCLN005']
     for accession_number in accessions_list_for_prediction:
         with open(f'ai_outputs/report_output/{accession_number}.txt', 'r') as file:
             # Read all lines from the file into a list
@@ -96,9 +96,13 @@ def main(api_host, client_id, client_secret):
         embedded_string = ''.join(lines)
         findings_string = ''.join(finding_labels)
 
+        # Construct the folder path
         folder_path = os.path.join(pwd, 'ai_outputs', 'report_output', f'{accession_number}.txt')
-        relative_path = os.path.relpath(folder_path, pwd)
-        link_to_folder = f'file://{relative_path}'
+
+        # Calculate the relative path
+        relative_path = os.path.relpath(folder_path, os.path.join(pwd, 'ai_outputs'))
+        link = os.path.join('./', relative_path)
+        link_to_folder = f'file://{link}'
 
         new_row_data = [
             accession_number,  # Accession Number
@@ -111,7 +115,8 @@ def main(api_host, client_id, client_secret):
 
         # Set the hyperlink for the "Link to Report Folder" cell
         cell = ws.cell(row=ws.max_row, column=4)
-        cell.hyperlink = link_to_folder
+        cell.hyperlink = relative_path
+        cell.value = relative_path
 
     # Set column widths to fit the content
     for col in ws.columns:
@@ -140,7 +145,7 @@ def main(api_host, client_id, client_secret):
         ws.row_dimensions[row_number].height = 280
 
     # Save the workbook
-    wb.save("accession_data.xlsx")
+    wb.save("ai_outputs/accession_data.xlsx")
 
     print("Excel file created successfully with the specified columns using openpyxl.")
 
