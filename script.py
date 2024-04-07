@@ -8,8 +8,8 @@ from os import path
 from openpyxl import Workbook
 from openpyxl.styles import Alignment
 
-from data_uploader import model_interface
-from parse_fortis import generate_txt_report
+from data_uploader_dev.data_uploader import model_interface
+from txt_report_gen.parse_fortis import generate_text_report
 
 output_location = "output/"
 now = datetime.now()
@@ -44,7 +44,7 @@ def main(api_host, client_id, client_secret):
             json.dump(result, fp)
 
     # Generate txt report
-    generate_txt_report('output', 'reports')
+    generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')
 
     # Create excel report
     # Create a new Workbook
@@ -68,11 +68,11 @@ def main(api_host, client_id, client_secret):
 
     accessions_list_for_prediction = ['GUBEW9QGY4ASYUPL', 'PUN5YZFXNJUHMMKT', 'K2PHME2TSFZKJPOG', 'FVMZKRJCHSF3BZ6U', 'PWZAOGPDS6F44GVM', 'GVNHRIX3USQYAXHY', 'HCR9WTFX9MRBKTHM', 'E2NCJWFWMZXXVFEE', 'MA8EID3SSFRQYPK6', 'IFY7KSWEYPYTZUHR', '4H2JXTHT9G9UIXFI', 'PT4QKF3QEEYCLNNF', '29b2328160a72d32', '2b08a0a785f6b', 'cc64e893acd99', '3dddd317e4b7e', 'd12c5785a86a', '87c1ff9de4abd', 'b9c43ecebd12f', '932062ca961fc']
     for accession_number in accessions_list_for_prediction:
-        with open(f'reports/{accession_number}/{accession_number}.txt', 'r') as file:
+        with open(f'ai_outputs/report_output/{accession_number}.txt', 'r') as file:
             # Read all lines from the file into a list
             lines = file.readlines()
 
-        with open(f'output/{accession_number}.json', 'r') as json_file:
+        with open(f'txt_report_gen/cxrjsons/{accession_number}.json', 'r') as json_file:
             model_output = json.load(json_file)
 
         finding_labels = []
@@ -96,8 +96,9 @@ def main(api_host, client_id, client_secret):
         embedded_string = ''.join(lines)
         findings_string = ''.join(finding_labels)
 
-        folder_path = os.path.join(pwd, 'reports', f'{accession_number}')
-        link_to_folder = f'file://{folder_path}'
+        folder_path = os.path.join(pwd, 'ai_outputs', 'report_output', f'{accession_number}.txt')
+        relative_path = os.path.relpath(folder_path, pwd)
+        link_to_folder = f'file://{relative_path}'
 
         new_row_data = [
             accession_number,  # Accession Number

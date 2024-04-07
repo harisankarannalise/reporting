@@ -1,5 +1,4 @@
-output/
-reports/
-reports_backup/
+ai_outputs/
+txt_report_gen/cxrjsons/
+txt_report_gen/reports/
 accession_data.xlsx
-ai_output.xlsx

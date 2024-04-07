@@ -69,17 +69,9 @@ def create_side_zone(arr):
         pass
     else:
         raise NotImplementedError(f'arr shape {arr.shape} not supported')
-    
-if __name__ == '__main__':
-    # Parse command line arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input_dir", help="Path to the input directory")
-    parser.add_argument("output_dir", help="Path to the output directory")
-    args = parser.parse_args()
 
-    input_dir = args.input_dir
-    output_dir = args.output_dir
 
+def generate_text_report(input_dir, output_dir):
     paths = glob.glob(f'{input_dir}/*.json')
     # Create output directory if it doesn't exist
     if not os.path.exists(output_dir):
@@ -163,7 +155,7 @@ if __name__ == '__main__':
         thresholds = pd.DataFrame(get_threshold(json.load(f)), index=['threshold']).transpose()
 
     section_mapping = {}
-    for section, _df in pd.read_csv('fortis_spec.csv', index_col=0).groupby('Report Section'):
+    for section, _df in pd.read_csv('txt_report_gen/fortis_spec.csv', index_col=0).groupby('Report Section'):
         slug = section.strip().lower().replace(' ','_')
         if slug not in section_mapping:
             section_mapping[slug] = []
@@ -174,7 +166,7 @@ if __name__ == '__main__':
 
 
     env = Environment(
-        loader=FileSystemLoader('templates/'),
+        loader=FileSystemLoader('txt_report_gen/templates/'),
         autoescape=select_autoescape(['html', 'xml', 'jinja'])
     )
 
@@ -227,3 +219,16 @@ if __name__ == '__main__':
         print (accession)
         print (output)
         print ('*******************************')
+
+
+if __name__ == '__main__':
+    # Parse command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("input_dir", help="Path to the input directory", default='txt_report_gen/cxrjsons')
+    parser.add_argument("output_dir", help="Path to the output directory", default='ai_outputs/report_output')
+    args = parser.parse_args()
+
+    input_dir = args.input_dir
+    output_dir = args.output_dir
+
+    generate_text_report(input_dir=input_dir, output_dir=output_dir)
