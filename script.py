@@ -101,8 +101,7 @@ def main(api_host, client_id, client_secret):
 
         # Calculate the relative path
         relative_path = os.path.relpath(folder_path, os.path.join(pwd, 'ai_outputs'))
-        link = os.path.join('./', relative_path)
-        link_to_folder = f'file://{link}'
+        link_to_folder = f'file://{relative_path}'
 
         new_row_data = [
             accession_number,  # Accession Number
