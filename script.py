@@ -3,6 +3,7 @@ import copy
 import json
 import logging
 import os
+import re
 from datetime import datetime
 from os import path
 from openpyxl import Workbook
@@ -23,6 +24,42 @@ logging.basicConfig(
     datefmt='%H:%M:%S %d/%m/%y ',
 )
 logger = logging.getLogger(__name__)
+
+
+def find_bold_indices(text):
+    bold_indices = []
+    start_tags = [match.start() for match in re.finditer(r'<b>', text)]
+    end_tags = [match.start() for match in re.finditer(r'</b>', text)]
+
+    for start_index in start_tags:
+        for end_index in end_tags:
+            if end_index > start_index:
+                bold_indices.append((start_index, end_index))
+                end_tags.remove(end_index)
+                break
+
+    return bold_indices
+
+
+def generate_rich_string(text, bold_indices, bold):
+    parts = []
+
+    # Sort bold indices to start with the smallest index
+    bold_indices.sort(key=lambda x: x[0])
+
+    # Split text into segments based on bold indices
+    start_index = 0
+    for bold_start, bold_end in bold_indices:
+        if start_index < bold_start:
+            parts.append(text[start_index:bold_start])
+        parts.append(bold)
+        parts.append(text[bold_start:bold_end])
+        start_index = bold_end
+
+    if start_index < len(text):
+        parts.append(text[start_index:])
+
+    return parts
 
 
 def main(api_host, client_id, client_secret):
@@ -52,6 +89,8 @@ def main(api_host, client_id, client_secret):
 
     # Add a worksheet to the workbook
     worksheet = workbook.add_worksheet()
+
+    bold = workbook.add_format({"bold": True})
 
     # Define column headings
     column_headings = [
@@ -109,11 +148,17 @@ def main(api_host, client_id, client_secret):
             link_to_folder,  # Link to Report Folder
             "<PLACEHOLDER>"  # Link to Secondary Capture Folder
         ]
+
+        bold_indices = find_bold_indices(embedded_string)
+
         for col_num, cell_data in enumerate(new_row_data):
             if col_num == 3:  # Add hyperlink for the "Link to Report Folder" column
                 # hyperlink_formula = f'=HYPERLINK("{relative_path}", "{relative_path}")'
                 # worksheet.write_formula(row_num, col_num, hyperlink_formula)
                 worksheet.write_url(row_num, col_num, relative_path, string=relative_path)
+            elif col_num == 2:
+                rich_text_parts = generate_rich_string(embedded_string, bold_indices, bold)
+                worksheet.write_rich_string(row_num, col_num, *rich_text_parts)
             else:
                 worksheet.write(row_num, col_num, cell_data)
 
