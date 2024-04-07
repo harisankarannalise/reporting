@@ -3,18 +3,16 @@ Title	CHEST X-RAY
 Projection:	{{ projection }}
 		
 Findings:		
-Technical quality:	{{ technical_quality }}
+Technical quality:	{{ technical_quality|safe }}
 
-Lines and Tubes:	{{ lines_and_tubes }}
+Lines and Tubes:	{{ lines_and_tubes|safe }}
 		
-Cardiomediastinal:	{{ cardiomediastinal }}
+Cardiomediastinal:	{{ cardiomediastinal|safe }}
 		
-Lung parenchyma:	{{ lung_parenchyma }}
+Lung parenchyma:	{{ lung_parenchyma|safe }}
 		
-Pleural space:	{{ pleural_space }}
+Pleural space:	{{ pleural_space|safe }}
 		
-Bones:	{{ bones }}
+Bones:	{{ bones|safe }}
 		
-Other:	{{ other }}
-		
-Conclusion:	[Empty field]	
+Other:	{{ other|safe }}

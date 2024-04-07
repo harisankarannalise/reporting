@@ -72,10 +72,17 @@ def create_side_zone(arr):
         pass
     else:
         raise NotImplementedError(f'arr shape {arr.shape} not supported')
+    
+if __name__ == '__main__':
+    # Parse command line arguments
+    parser = argparse.ArgumentParser()
+    parser.add_argument("input_dir", help="Path to the input directory")
+    parser.add_argument("output_dir", help="Path to the output directory")
+    args = parser.parse_args()
 
+    input_dir = args.input_dir
+    output_dir = args.output_dir
 
-def generate_txt_report(input_dir, output_dir):
-    start_time = time.time()
     paths = glob.glob(f'{input_dir}/*.json')
     # Create output directory if it doesn't exist
     if not os.path.exists(output_dir):
@@ -205,40 +212,21 @@ def generate_txt_report(input_dir, output_dir):
                 output = template.render(**bin_findings, **laterality_texts, **zone2x2_texts, **zone_to_laterality_texts)
                 # remove all empty lines (artifact of how my jinja templates are laid out)
                 output = ' '.join([line.capitalize() for line in output.split('\n') if len(line)])
+                if template_name != 'projection' and len(output):
+                    output = f"<b>{output}</b>"
                 # if the section has no relevant findings, use the default
                 if template_name in section_mapping:
                     if not any([finding in section_mapping[template_name] for finding in positive_findings.index]):
                         output = defaults[template_name]                    
                 template_components[template_name] = output
 
+
         template = env.get_template('base_report.jinja')
         output = template.render(**template_components)
 
-        study_output_dir = os.path.join(output_dir, accession)
-        if not os.path.exists(study_output_dir):
-            os.makedirs(study_output_dir)
-
-        output_path = os.path.join(study_output_dir, f"{accession}.txt")
+        output_path = os.path.join(output_dir, f"{accession}.txt")
         with open(output_path, "w") as f:
             f.write(output)
-
-        print(accession)
-        print('*******************************')
-
-    end_time = time.time()
-
-    # Calculate the elapsed time
-    elapsed_time = end_time - start_time
-    print(elapsed_time)
-
-
-if __name__ == '__main__':
-    # Parse command line arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument("input_dir", help="Path to the input directory")
-    parser.add_argument("output_dir", help="Path to the output directory")
-    args = parser.parse_args()
-
-    input_dir = args.input_dir
-    output_dir = args.output_dir
-    generate_txt_report(input_dir, output_dir)
+        print (accession)
+        print (output)
+        print ('*******************************')
