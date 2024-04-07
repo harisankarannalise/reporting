@@ -53,8 +53,8 @@ def generate_rich_string(text, bold_indices, bold):
         if start_index < bold_start:
             parts.append(text[start_index:bold_start])
         parts.append(bold)
-        parts.append(text[bold_start:bold_end])
-        start_index = bold_end
+        parts.append(text[bold_start+3:bold_end])
+        start_index = bold_end + 4
 
     if start_index < len(text):
         parts.append(text[start_index:])
@@ -167,7 +167,7 @@ def main(api_host, client_id, client_secret):
         # max_length = max(len(str(new_row_data[col_num])) for new_row_data in
         #                  [worksheet.row_values(row_num) for row_num in range(worksheet.dim_rowmax + 1)])
         if col_num == 2:
-            worksheet.set_column(col_num, col_num, 125)
+            worksheet.set_column(col_num, col_num, 170)
         elif col_num == 1:
             worksheet.set_column(col_num, col_num, 75)
         else:
