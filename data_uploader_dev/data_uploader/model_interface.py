@@ -20,10 +20,10 @@ from requests.exceptions import ConnectionError, ConnectTimeout, ReadTimeout, Ti
 from tqdm.auto import tqdm
 from urllib3.exceptions import ProtocolError
 
-from data_uploader.cloud.dicom_processor import DicomProcessor
-from data_uploader.cloud.web_transport import WebTransport
-from data_uploader.utils import utils
-from data_uploader.utils.example import Example
+from data_uploader_dev.data_uploader.cloud.dicom_processor import DicomProcessor
+from data_uploader_dev.data_uploader.cloud.web_transport import WebTransport
+from data_uploader_dev.data_uploader.utils import utils
+from data_uploader_dev.data_uploader.utils.example import Example
 
 REMOTE_ERRORS = (
     ConnectionError,

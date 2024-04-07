@@ -11,7 +11,7 @@ from requests import Response
 from requests import get as http_get
 from requests import post as http_post
 
-from data_uploader.cloud.request_signer import RequestSigner
+from data_uploader_dev.data_uploader.cloud.request_signer import RequestSigner
 
 HEADER_CONTENT_TYPE = "content-type"
 HEADER_CLIENT_ID = "x-annalise-ai-client-id"

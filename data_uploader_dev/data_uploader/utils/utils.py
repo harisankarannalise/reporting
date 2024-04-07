@@ -15,7 +15,7 @@ from os.path import dirname, basename
 from collections import defaultdict
 
 
-from data_uploader.utils.constants import DCM_HEADERS
+from data_uploader_dev.data_uploader.utils.constants import DCM_HEADERS
 
 logger = getLogger(basename(dirname(__file__)))
 

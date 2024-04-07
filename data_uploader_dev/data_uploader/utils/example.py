@@ -5,7 +5,7 @@ from typing import Dict, List, Union
 
 import numpy as np
 
-from data_uploader.utils.constants import LAT_FINDINGS
+from data_uploader_dev.data_uploader.utils.constants import LAT_FINDINGS
 
 
 class Example:

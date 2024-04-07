@@ -1,5 +1,20 @@
 import re
 
+
+def find_bold_indices(text):
+    bold_indices = []
+    start_tags = [match.start() for match in re.finditer(r'<b>', text)]
+    end_tags = [match.start() for match in re.finditer(r'</b>', text)]
+
+    for start_index in start_tags:
+        for end_index in end_tags:
+            if end_index > start_index:
+                bold_indices.append((start_index, end_index))
+                end_tags.remove(end_index)
+                break
+
+    return bold_indices
+
 if __name__ == "__main__":
     import xlsxwriter
 
@@ -67,17 +82,20 @@ if __name__ == "__main__":
 
     # Find indices of <b> and </b> tags using regular expressions
     # Find indices of <b> and </b> tags using regular expressions
-    b_indices = [(match.start(), match.end()) for match in re.finditer(r'<b>', text)]
-    end_b_indices = [(match.start(), match.end()) for match in re.finditer(r'</b>', text)]
+    # b_indices = [(match.start(), match.end()) for match in re.finditer(r'<b>', text)]
+    # end_b_indices = [(match.start(), match.end()) for match in re.finditer(r'</b>', text)]
+    #
+    # # Pair up <b> and </b> indices
+    # paired_indices = [(b_start, end_b_indices[i][1]) for i, b_start in enumerate(b_indices)]
+    #
+    # print(paired_indices)
+    #
+    # start = 0
+    # for pair in paired_indices:
+    #     bold_text = text[pair[0] + 3:pair[1] - 4]  # Extract text between <b> and </b>
+    #     worksheet.write(start, 0, text[start:pair[0]])  # Write text before <b>
+    #     worksheet.write_rich_string(start, 0, bold, bold_text)  # Write bold text
+    #     start = pair[1]  # Update start index for next iteration
 
-    # Pair up <b> and </b> indices
-    paired_indices = [(b_start, end_b_indices[i][1]) for i, b_start in enumerate(b_indices)]
-
-    print(paired_indices)
-
-    start = 0
-    for pair in paired_indices:
-        bold_text = text[pair[0] + 3:pair[1] - 4]  # Extract text between <b> and </b>
-        worksheet.write(start, 0, text[start:pair[0]])  # Write text before <b>
-        worksheet.write_rich_string(start, 0, bold, bold_text)  # Write bold text
-        start = pair[1]  # Update start index for next iteration
+    bold_indices = find_bold_indices(text)
+    print("Bold indices:", bold_indices)

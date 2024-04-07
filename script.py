@@ -63,26 +63,26 @@ def generate_rich_string(text, bold_indices, bold):
 
 
 def main(api_host, client_id, client_secret):
-    # mi = model_interface.ModelInterface(
-    #     api_host, client_id, client_secret, wait_time=5, max_workers=1
-    # )
-    #
-    # results = mi.get_studies()
-    # data = results.json()
-    #
-    # # Extract accession numbers
-    # accessions = [study["accessionNumber"] for study in data["studies"]]
-    # accessions_list_for_prediction = accessions[0:20]
-    #
-    # # Get prediction results from BE
-    # results = mi.bulk_get(accessions_list_for_prediction)
-    # for result in results:
-    #     json_file = path.join(output_location, f"{result['accession']}.json")
-    #     with open(json_file, 'w') as fp:
-    #         json.dump(result, fp)
-    #
-    # # Generate txt report
-    # generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')
+    mi = model_interface.ModelInterface(
+        api_host, client_id, client_secret, wait_time=5, max_workers=1
+    )
+
+    results = mi.get_studies()
+    data = results.json()
+
+    # Extract accession numbers
+    accessions = [study["accessionNumber"] for study in data["studies"]]
+    accessions_list_for_prediction = accessions[0:2000]
+
+    # Get prediction results from BE
+    results = mi.bulk_get(accessions_list_for_prediction)
+    for result in results:
+        json_file = path.join(output_location, f"{result['accession']}.json")
+        with open(json_file, 'w') as fp:
+            json.dump(result, fp)
+
+    # Generate txt report
+    generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')
 
     # Create a new Excel workbook
     workbook = xlsxwriter.Workbook('ai_outputs/accession_data.xlsx')
@@ -108,8 +108,8 @@ def main(api_host, client_id, client_secret):
     # Directory path
     pwd = os.getcwd()
 
-    # Sample accessions list
-    accessions_list_for_prediction = ['JPCLN001', 'JPCLN003', 'JPCLN005']
+    # # Sample accessions list
+    # accessions_list_for_prediction = ['JPCLN001', 'JPCLN003', 'JPCLN005']
 
     # Iterate over accessions
     for row_num, accession_number in enumerate(accessions_list_for_prediction, start=1):
