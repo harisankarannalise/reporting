@@ -1,6 +1,4 @@
 import glob
-import time
-
 import pandas as pd
 import json
 import base64
@@ -31,7 +29,6 @@ def block_reduce(image, block_size, func):
             reduced_image[i, j] = func(block)
 
     return reduced_image
-
 def create_side_zone(arr):
     if arr.shape == (2,):
         if arr[0] == 1 and arr[1] == 0:
