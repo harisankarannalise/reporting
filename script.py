@@ -7,6 +7,7 @@ from datetime import datetime
 from os import path
 from openpyxl import Workbook
 from openpyxl.styles import Alignment
+import xlsxwriter
 
 from data_uploader_dev.data_uploader import model_interface
 from txt_report_gen.parse_fortis import generate_text_report
@@ -46,12 +47,11 @@ def main(api_host, client_id, client_secret):
     # # Generate txt report
     # generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')
 
-    # Create excel report
-    # Create a new Workbook
-    wb = Workbook()
+    # Create a new Excel workbook
+    workbook = xlsxwriter.Workbook('ai_outputs/accession_data.xlsx')
 
-    # Select the active worksheet
-    ws = wb.active
+    # Add a worksheet to the workbook
+    worksheet = workbook.add_worksheet()
 
     # Define column headings
     column_headings = [
@@ -62,14 +62,19 @@ def main(api_host, client_id, client_secret):
         "Link to Secondary Capture Folder"
     ]
 
-    # Add column headings to the first row
-    ws.append(column_headings)
+    # Write column headings to the first row
+    for col_num, heading in enumerate(column_headings):
+        worksheet.write(0, col_num, heading)
+
+    # Directory path
     pwd = os.getcwd()
 
+    # Sample accessions list
     accessions_list_for_prediction = ['JPCLN001', 'JPCLN003', 'JPCLN005']
-    for accession_number in accessions_list_for_prediction:
+
+    # Iterate over accessions
+    for row_num, accession_number in enumerate(accessions_list_for_prediction, start=1):
         with open(f'ai_outputs/report_output/{accession_number}.txt', 'r') as file:
-            # Read all lines from the file into a list
             lines = file.readlines()
 
         with open(f'txt_report_gen/cxrjsons/{accession_number}.json', 'r') as json_file:
@@ -77,32 +82,26 @@ def main(api_host, client_id, client_secret):
 
         finding_labels = []
 
-        # Extract relevant findings
         relevant_findings = model_output["classification"]["findings"]["vision"]["study"]["classifications"]["relevant"]
 
-        # Define a custom sorting key function
         def sorting_key(finding):
             return (finding["assignPriorityId"], finding["displayOrder"])
 
-        # Sort the findings
         sorted_findings = []
         for group in relevant_findings:
             findings_list = group["findings"]
             sorted_findings.extend(sorted(findings_list, key=sorting_key))
 
-        # Extract the labels after sorting
         finding_labels = [f'{finding["labelName"]}\n' for finding in sorted_findings]
 
         embedded_string = ''.join(lines)
         findings_string = ''.join(finding_labels)
 
-        # Construct the folder path
         folder_path = os.path.join(pwd, 'ai_outputs', 'report_output', f'{accession_number}.txt')
-
-        # Calculate the relative path
         relative_path = os.path.relpath(folder_path, os.path.join(pwd, 'ai_outputs'))
         link_to_folder = f'file://{relative_path}'
 
+        # Write data to the worksheet
         new_row_data = [
             accession_number,  # Accession Number
             findings_string,  # List of Findings
@@ -110,43 +109,33 @@ def main(api_host, client_id, client_secret):
             link_to_folder,  # Link to Report Folder
             "<PLACEHOLDER>"  # Link to Secondary Capture Folder
         ]
-        ws.append(new_row_data)
+        for col_num, cell_data in enumerate(new_row_data):
+            if col_num == 3:  # Add hyperlink for the "Link to Report Folder" column
+                # hyperlink_formula = f'=HYPERLINK("{relative_path}", "{relative_path}")'
+                # worksheet.write_formula(row_num, col_num, hyperlink_formula)
+                worksheet.write_url(row_num, col_num, relative_path, string=relative_path)
+            else:
+                worksheet.write(row_num, col_num, cell_data)
 
-        # Set the hyperlink for the "Link to Report Folder" cell
-        cell = ws.cell(row=ws.max_row, column=4)
-        cell.hyperlink = relative_path
-        cell.value = relative_path
-
-    # Set column widths to fit the content
-    for col in ws.columns:
-        max_length = 0
-        column = col[0].column_letter
-        for cell in col:
-            try:
-                cell.alignment = Alignment(horizontal='left',
-                                           vertical='top',
-                                           wrap_text=True,
-                                           shrink_to_fit=True)
-                if len(str(cell.value)) > max_length:
-                    max_length = len(cell.value)
-            except:
-                pass
-        adjusted_width = (max_length + 2) * 1.2
-        if column == 'C':
-            ws.column_dimensions[column].width = 125
-        elif column == 'B':
-            ws.column_dimensions[column].width = 75
+    # Set column widths and apply text wrap
+    for col_num, heading in enumerate(column_headings):
+        # max_length = max(len(str(new_row_data[col_num])) for new_row_data in
+        #                  [worksheet.row_values(row_num) for row_num in range(worksheet.dim_rowmax + 1)])
+        if col_num == 2:
+            worksheet.set_column(col_num, col_num, 125)
+        elif col_num == 1:
+            worksheet.set_column(col_num, col_num, 75)
         else:
-            ws.column_dimensions[column].width = adjusted_width
+            worksheet.set_column(col_num, col_num, 30)
 
     # Apply text wrap to the entire sheet
-    for row_number, row in enumerate(ws.iter_rows(), start=2):
-        ws.row_dimensions[row_number].height = 280
+    for row_num in range(1, len(accessions_list_for_prediction) + 1):
+        worksheet.set_row(row_num, 280)
 
-    # Save the workbook
-    wb.save("ai_outputs/accession_data.xlsx")
+    # Close the workbook
+    workbook.close()
 
-    print("Excel file created successfully with the specified columns using openpyxl.")
+    print("Excel file created successfully with the specified columns using xlsxwriter.")
 
 
 if __name__ == "__main__":
