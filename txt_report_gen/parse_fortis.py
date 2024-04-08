@@ -147,12 +147,12 @@ def generate_text_report(input_dir, output_dir):
             
         d['accession'] = path.split('/')[-1].replace('.json', '')
         ancillary_data[d['accession'] ] = {'pooled_segmentations_3x2': pooled_segmentations3x2,'pooled_segmentations_2x2': pooled_segmentations2x2, 'pooled_lateralities': pooled_lateralities, 'viewpositions':viewpositions}
+        thresholds = get_threshold(raw_data)
+        for k,v in d.items():
+            if k in thresholds:
+                d[k] = d[k] > thresholds[k]
         data.append(d)
     df = pd.DataFrame(data).set_index('accession')
-
-    # assume thresholds are consistent across all jsons! 
-    with open(path) as f:
-        thresholds = pd.DataFrame(get_threshold(json.load(f)), index=['threshold']).transpose()
 
     section_mapping = {}
     for section, _df in pd.read_csv('txt_report_gen/fortis_spec.csv', index_col=0).groupby('Report Section'):
@@ -170,7 +170,7 @@ def generate_text_report(input_dir, output_dir):
         autoescape=select_autoescape(['html', 'xml', 'jinja'])
     )
 
-    bin_df = df > thresholds.values.transpose()
+    bin_df = df 
     defaults = {'projection':'Frontal chest radiograph.',
                 'technical_quality':'Satisfactory image quality.',
                 'cardiomediastinal':'Cardiac silhouette within normal limits. Normal mediastinal and hilar contours.',

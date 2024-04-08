@@ -64,7 +64,7 @@ def generate_rich_string(text, bold_indices, bold):
 
 def main(api_host, client_id, client_secret):
     mi = model_interface.ModelInterface(
-        api_host, client_id, client_secret, wait_time=5, max_workers=1
+        api_host, client_id, client_secret, wait_time=5, max_workers=10
     )
 
     results = mi.get_studies()
@@ -72,7 +72,7 @@ def main(api_host, client_id, client_secret):
 
     # Extract accession numbers
     accessions = [study["accessionNumber"] for study in data["studies"]]
-    accessions = accessions[0:1500]
+    accessions = accessions[0:2000]
     accessions_length = len(accessions)
     batch_size = 500
     num_batches = (accessions_length + batch_size - 1) // batch_size
@@ -80,21 +80,21 @@ def main(api_host, client_id, client_secret):
 
     failed_dict = {}
 
-    # accessions_list_for_prediction = accessions[0:2000]
-    for batch_index, batch_accessions in enumerate(accession_batches):
-        logger.info(f'Fetching results for batch : {batch_index}')
-        # Get prediction results from BE
-        results = mi.bulk_get(batch_accessions)
-        failed_dict = {}
-        for result in results:
-            if result["classification"] == "REQUIRED_CXR_ERROR":
-                failed_dict[result["accession"]] = result["classification"]
-            else:
-                json_file = path.join(output_location, f"{result['accession']}.json")
-                with open(json_file, 'w') as fp:
-                    json.dump(result, fp)
-
-    logger.info(f'Failed dict : {failed_dict}')
+    # # accessions_list_for_prediction = accessions[0:2000]
+    # for batch_index, batch_accessions in enumerate(accession_batches):
+    #     logger.info(f'Fetching results for batch : {batch_index}')
+    #     # Get prediction results from BE
+    #     results = mi.bulk_get(batch_accessions)
+    #     failed_dict = {}
+    #     for result in results:
+    #         if result["classification"] == "REQUIRED_CXR_ERROR" or result["classification"] == "REQUIRED_AP_PA_IMAGE_ERROR" or result["classification"] == "ERROR" or result["classification"] == "MODEL_ERROR":
+    #             failed_dict[result["accession"]] = result["classification"]
+    #         else:
+    #             json_file = path.join(output_location, f"{result['accession']}.json")
+    #             with open(json_file, 'w') as fp:
+    #                 json.dump(result, fp)
+    #
+    # logger.info(f'Failed dict : {failed_dict}')
 
     # Generate txt report
     generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')

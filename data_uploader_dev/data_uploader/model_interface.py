@@ -303,7 +303,7 @@ def get(accession: str, transport: WebTransport, get_timeout: int = 300) -> Dict
     """
 
     get_log = None
-
+    logger.info(f"Fetching predictions for {accession}")
     for attempt in range(3):
         # Fetch return from Optimus
         try:
