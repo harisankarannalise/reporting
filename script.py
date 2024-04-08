@@ -80,21 +80,25 @@ def main(api_host, client_id, client_secret):
 
     failed_dict = {}
 
-    # # accessions_list_for_prediction = accessions[0:2000]
-    # for batch_index, batch_accessions in enumerate(accession_batches):
-    #     logger.info(f'Fetching results for batch : {batch_index}')
-    #     # Get prediction results from BE
-    #     results = mi.bulk_get(batch_accessions)
-    #     failed_dict = {}
-    #     for result in results:
-    #         if result["classification"] == "REQUIRED_CXR_ERROR" or result["classification"] == "REQUIRED_AP_PA_IMAGE_ERROR" or result["classification"] == "ERROR" or result["classification"] == "MODEL_ERROR":
-    #             failed_dict[result["accession"]] = result["classification"]
-    #         else:
-    #             json_file = path.join(output_location, f"{result['accession']}.json")
-    #             with open(json_file, 'w') as fp:
-    #                 json.dump(result, fp)
-    #
-    # logger.info(f'Failed dict : {failed_dict}')
+    # accessions_list_for_prediction = accessions[0:2000]
+    for batch_index, batch_accessions in enumerate(accession_batches):
+        logger.info(f'Fetching results for batch : {batch_index}')
+        # Get prediction results from BE
+        results = mi.bulk_get(batch_accessions)
+        for result in results:
+            # if result["classification"] == "REQUIRED_CXR_ERROR" or result["classification"] == "REQUIRED_AP_PA_IMAGE_ERROR" or result["classification"] == "ERROR" or result["classification"] == "MODEL_ERROR":
+            #     failed_dict[result["accession"]] = result["classification"]
+            if result["get_log"] is None:
+                json_file = path.join(output_location, f"{result['accession']}.json")
+                with open(json_file, 'w') as fp:
+                    json.dump(result, fp)
+            else:
+                failed_dict[result["accession"]] = result["classification"]
+
+    for key in failed_dict:
+        accessions.remove(key)
+
+    logger.info(f'Failed dict : {failed_dict}')
 
     # Generate txt report
     generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')
@@ -123,8 +127,8 @@ def main(api_host, client_id, client_secret):
     # Directory path
     pwd = os.getcwd()
 
-    # # Sample accessions list
-    # accessions_list_for_prediction = ['JPCLN001', 'JPCLN003', 'JPCLN005']
+    # Sample accessions list
+    # accessions = ['0cfa3270d06d3']
 
     # Iterate over accessions
     for row_num, accession_number in enumerate(accessions, start=1):
@@ -148,6 +152,8 @@ def main(api_host, client_id, client_secret):
                 sorted_findings.extend(sorted(findings_list, key=sorting_key))
 
             finding_labels = [f'{finding["labelName"]}\n' for finding in sorted_findings]
+            if len(finding_labels) == 0:
+                finding_labels.append('<No findings present>')
 
             embedded_string = ''.join(lines)
             findings_string = ''.join(finding_labels)
