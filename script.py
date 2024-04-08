@@ -1,13 +1,11 @@
 import argparse
-import copy
+import csv
 import json
 import logging
 import os
 import re
 from datetime import datetime
 from os import path
-from openpyxl import Workbook
-from openpyxl.styles import Alignment
 import xlsxwriter
 
 from data_uploader_dev.data_uploader import model_interface
@@ -62,47 +60,7 @@ def generate_rich_string(text, bold_indices, bold):
     return parts
 
 
-def main(api_host, client_id, client_secret):
-    mi = model_interface.ModelInterface(
-        api_host, client_id, client_secret, wait_time=5, max_workers=10
-    )
-
-    results = mi.get_studies()
-    data = results.json()
-
-    # Extract accession numbers
-    accessions = [study["accessionNumber"] for study in data["studies"]]
-    accessions = accessions[0:2000]
-    accessions_length = len(accessions)
-    batch_size = 500
-    num_batches = (accessions_length + batch_size - 1) // batch_size
-    accession_batches = [accessions[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
-
-    failed_dict = {}
-
-    # accessions_list_for_prediction = accessions[0:2000]
-    for batch_index, batch_accessions in enumerate(accession_batches):
-        logger.info(f'Fetching results for batch : {batch_index}')
-        # Get prediction results from BE
-        results = mi.bulk_get(batch_accessions)
-        for result in results:
-            # if result["classification"] == "REQUIRED_CXR_ERROR" or result["classification"] == "REQUIRED_AP_PA_IMAGE_ERROR" or result["classification"] == "ERROR" or result["classification"] == "MODEL_ERROR":
-            #     failed_dict[result["accession"]] = result["classification"]
-            if result["get_log"] is None:
-                json_file = path.join(output_location, f"{result['accession']}.json")
-                with open(json_file, 'w') as fp:
-                    json.dump(result, fp)
-            else:
-                failed_dict[result["accession"]] = result["classification"]
-
-    for key in failed_dict:
-        accessions.remove(key)
-
-    logger.info(f'Failed dict : {failed_dict}')
-
-    # Generate txt report
-    generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')
-
+def generate_excel_report(accessions):
     # Create a new Excel workbook
     workbook = xlsxwriter.Workbook('ai_outputs/accession_data.xlsx')
 
@@ -141,7 +99,8 @@ def main(api_host, client_id, client_secret):
 
             finding_labels = []
 
-            relevant_findings = model_output["classification"]["findings"]["vision"]["study"]["classifications"]["relevant"]
+            relevant_findings = model_output["classification"]["findings"]["vision"]["study"]["classifications"][
+                "relevant"]
 
             def sorting_key(finding):
                 return finding["assignPriorityId"], finding["displayOrder"]
@@ -158,9 +117,15 @@ def main(api_host, client_id, client_secret):
             embedded_string = ''.join(lines)
             findings_string = ''.join(finding_labels)
 
+            # text report path
             folder_path = os.path.join(pwd, 'ai_outputs', 'report_output', f'{accession_number}.txt')
             relative_path = os.path.relpath(folder_path, os.path.join(pwd, 'ai_outputs'))
             link_to_folder = f'file://{relative_path}'
+
+            # SC report path
+            sc_folder_path = os.path.join(pwd, 'ai_outputs', 'secondary_capture_output', f'{accession_number}')
+            sc_relative_path = os.path.relpath(sc_folder_path, os.path.join(pwd, 'ai_outputs'))
+            link_to_sc_folder = f'file://{sc_relative_path}'
 
             # Write data to the worksheet
             new_row_data = [
@@ -168,7 +133,7 @@ def main(api_host, client_id, client_secret):
                 findings_string,  # List of Findings
                 embedded_string,  # Report Embedded
                 link_to_folder,  # Link to Report Folder
-                "<PLACEHOLDER>"  # Link to Secondary Capture Folder
+                link_to_sc_folder  # Link to Secondary Capture Folder
             ]
 
             bold_indices = find_bold_indices(embedded_string)
@@ -178,6 +143,8 @@ def main(api_host, client_id, client_secret):
                     # hyperlink_formula = f'=HYPERLINK("{relative_path}", "{relative_path}")'
                     # worksheet.write_formula(row_num, col_num, hyperlink_formula)
                     worksheet.write_url(row_num, col_num, relative_path, string=relative_path)
+                elif col_num == 4:
+                    worksheet.write_url(row_num, col_num, sc_relative_path, string=sc_relative_path)
                 elif col_num == 2:
                     logger.info(f'accessions: {accession_number}')
                     if len(bold_indices) != 0:
@@ -195,7 +162,9 @@ def main(api_host, client_id, client_secret):
         if col_num == 2:
             worksheet.set_column(col_num, col_num, 170)
         elif col_num == 1:
-            worksheet.set_column(col_num, col_num, 75)
+            worksheet.set_column(col_num, col_num, 50)
+        elif col_num == 3 or col_num == 4:
+            worksheet.set_column(col_num, col_num, 45)
         else:
             worksheet.set_column(col_num, col_num, 30)
 
@@ -206,7 +175,87 @@ def main(api_host, client_id, client_secret):
     # Close the workbook
     workbook.close()
 
-    print("Excel file created successfully with the specified columns using xlsxwriter.")
+    logger.info("Excel file created successfully with the specified columns using xlsxwriter.")
+
+
+def main(api_host, client_id, client_secret):
+    mi = model_interface.ModelInterface(
+        api_host, client_id, client_secret, wait_time=5, max_workers=10
+    )
+
+    results = mi.get_studies()
+    data = results.json()
+
+    # Extract accession numbers
+    accessions = [study["accessionNumber"] for study in data["studies"]]
+    accessions = accessions[0:2000]
+
+    # Open the CSV file in write mode
+    with open('accessions.csv', 'w', newline='') as file:
+        # Create a CSV writer object
+        writer = csv.writer(file)
+
+        # Write each element of the list as a separate row
+        for item in accessions:
+            writer.writerow([item])
+
+    accessions_length = len(accessions)
+    batch_size = 500
+    num_batches = (accessions_length + batch_size - 1) // batch_size
+    accession_batches = [accessions[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
+
+    failed_dict = {}
+
+    # accessions_list_for_prediction = accessions[0:2000]
+    for batch_index, batch_accessions in enumerate(accession_batches):
+        logger.info(f'Fetching results for batch : {batch_index}')
+        # Get prediction results from BE
+        results = mi.bulk_get(batch_accessions)
+        for result in results:
+            # if result["classification"] == "REQUIRED_CXR_ERROR" or result["classification"] == "REQUIRED_AP_PA_IMAGE_ERROR" or result["classification"] == "ERROR" or result["classification"] == "MODEL_ERROR":
+            #     failed_dict[result["accession"]] = result["classification"]
+            if result["get_log"] is None:
+                json_file = path.join(output_location, f"{result['accession']}.json")
+                with open(json_file, 'w') as fp:
+                    json.dump(result, fp)
+            else:
+                failed_dict[result["accession"]] = result["classification"]
+
+    for key in failed_dict:
+        accessions.remove(key)
+
+    with open('failed_dict.csv', 'w', newline='') as file:
+        # Create a CSV writer object
+        writer = csv.writer(file)
+
+        # Write each key-value pair as a separate row
+        for key, value in failed_dict.items():
+            writer.writerow([key, value])
+
+    # Open the CSV file in write mode
+    with open('final_accessions.csv', 'w', newline='') as file:
+        # Create a CSV writer object
+        writer = csv.writer(file)
+
+        # Write each element of the list as a separate row
+        for item in accessions:
+            writer.writerow([item])
+
+    logger.info(f'Failed dict : {failed_dict}')
+
+    # Generate txt report
+    generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')
+
+    # Accession number from excel
+    # accessions = []
+    # with open('final_accessions.csv', 'r') as file:
+    #     csv_reader = csv.reader(file)
+    #     for row in csv_reader:
+    #         combined_string = ''.join(row)
+    #         accessions.append(combined_string)
+
+    # Generate excel report
+    generate_excel_report(accessions)
 
 
 if __name__ == "__main__":
