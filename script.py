@@ -13,7 +13,7 @@ import xlsxwriter
 from data_uploader_dev.data_uploader import model_interface
 from txt_report_gen.parse_fortis import generate_text_report
 
-output_location = "output/"
+output_location = "txt_report_gen/cxrjsons/"
 now = datetime.now()
 log_file = path.join(output_location, f'get_{now.strftime("%Y%m%d")}.log')
 logging.basicConfig(
@@ -72,14 +72,29 @@ def main(api_host, client_id, client_secret):
 
     # Extract accession numbers
     accessions = [study["accessionNumber"] for study in data["studies"]]
-    accessions_list_for_prediction = accessions[0:2000]
+    accessions = accessions[0:1500]
+    accessions_length = len(accessions)
+    batch_size = 500
+    num_batches = (accessions_length + batch_size - 1) // batch_size
+    accession_batches = [accessions[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
 
-    # Get prediction results from BE
-    results = mi.bulk_get(accessions_list_for_prediction)
-    for result in results:
-        json_file = path.join(output_location, f"{result['accession']}.json")
-        with open(json_file, 'w') as fp:
-            json.dump(result, fp)
+    failed_dict = {}
+
+    # accessions_list_for_prediction = accessions[0:2000]
+    for batch_index, batch_accessions in enumerate(accession_batches):
+        logger.info(f'Fetching results for batch : {batch_index}')
+        # Get prediction results from BE
+        results = mi.bulk_get(batch_accessions)
+        failed_dict = {}
+        for result in results:
+            if result["classification"] == "REQUIRED_CXR_ERROR":
+                failed_dict[result["accession"]] = result["classification"]
+            else:
+                json_file = path.join(output_location, f"{result['accession']}.json")
+                with open(json_file, 'w') as fp:
+                    json.dump(result, fp)
+
+    logger.info(f'Failed dict : {failed_dict}')
 
     # Generate txt report
     generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')
@@ -112,55 +127,60 @@ def main(api_host, client_id, client_secret):
     # accessions_list_for_prediction = ['JPCLN001', 'JPCLN003', 'JPCLN005']
 
     # Iterate over accessions
-    for row_num, accession_number in enumerate(accessions_list_for_prediction, start=1):
-        with open(f'ai_outputs/report_output/{accession_number}.txt', 'r') as file:
-            lines = file.readlines()
+    for row_num, accession_number in enumerate(accessions, start=1):
+        if os.path.exists(f'ai_outputs/report_output/{accession_number}.txt'):
+            with open(f'ai_outputs/report_output/{accession_number}.txt', 'r') as file:
+                lines = file.readlines()
 
-        with open(f'txt_report_gen/cxrjsons/{accession_number}.json', 'r') as json_file:
-            model_output = json.load(json_file)
+            with open(f'txt_report_gen/cxrjsons/{accession_number}.json', 'r') as json_file:
+                model_output = json.load(json_file)
 
-        finding_labels = []
+            finding_labels = []
 
-        relevant_findings = model_output["classification"]["findings"]["vision"]["study"]["classifications"]["relevant"]
+            relevant_findings = model_output["classification"]["findings"]["vision"]["study"]["classifications"]["relevant"]
 
-        def sorting_key(finding):
-            return (finding["assignPriorityId"], finding["displayOrder"])
+            def sorting_key(finding):
+                return finding["assignPriorityId"], finding["displayOrder"]
 
-        sorted_findings = []
-        for group in relevant_findings:
-            findings_list = group["findings"]
-            sorted_findings.extend(sorted(findings_list, key=sorting_key))
+            sorted_findings = []
+            for group in relevant_findings:
+                findings_list = group["findings"]
+                sorted_findings.extend(sorted(findings_list, key=sorting_key))
 
-        finding_labels = [f'{finding["labelName"]}\n' for finding in sorted_findings]
+            finding_labels = [f'{finding["labelName"]}\n' for finding in sorted_findings]
 
-        embedded_string = ''.join(lines)
-        findings_string = ''.join(finding_labels)
+            embedded_string = ''.join(lines)
+            findings_string = ''.join(finding_labels)
 
-        folder_path = os.path.join(pwd, 'ai_outputs', 'report_output', f'{accession_number}.txt')
-        relative_path = os.path.relpath(folder_path, os.path.join(pwd, 'ai_outputs'))
-        link_to_folder = f'file://{relative_path}'
+            folder_path = os.path.join(pwd, 'ai_outputs', 'report_output', f'{accession_number}.txt')
+            relative_path = os.path.relpath(folder_path, os.path.join(pwd, 'ai_outputs'))
+            link_to_folder = f'file://{relative_path}'
 
-        # Write data to the worksheet
-        new_row_data = [
-            accession_number,  # Accession Number
-            findings_string,  # List of Findings
-            embedded_string,  # Report Embedded
-            link_to_folder,  # Link to Report Folder
-            "<PLACEHOLDER>"  # Link to Secondary Capture Folder
-        ]
+            # Write data to the worksheet
+            new_row_data = [
+                accession_number,  # Accession Number
+                findings_string,  # List of Findings
+                embedded_string,  # Report Embedded
+                link_to_folder,  # Link to Report Folder
+                "<PLACEHOLDER>"  # Link to Secondary Capture Folder
+            ]
 
-        bold_indices = find_bold_indices(embedded_string)
+            bold_indices = find_bold_indices(embedded_string)
 
-        for col_num, cell_data in enumerate(new_row_data):
-            if col_num == 3:  # Add hyperlink for the "Link to Report Folder" column
-                # hyperlink_formula = f'=HYPERLINK("{relative_path}", "{relative_path}")'
-                # worksheet.write_formula(row_num, col_num, hyperlink_formula)
-                worksheet.write_url(row_num, col_num, relative_path, string=relative_path)
-            elif col_num == 2:
-                rich_text_parts = generate_rich_string(embedded_string, bold_indices, bold)
-                worksheet.write_rich_string(row_num, col_num, *rich_text_parts)
-            else:
-                worksheet.write(row_num, col_num, cell_data)
+            for col_num, cell_data in enumerate(new_row_data):
+                if col_num == 3:  # Add hyperlink for the "Link to Report Folder" column
+                    # hyperlink_formula = f'=HYPERLINK("{relative_path}", "{relative_path}")'
+                    # worksheet.write_formula(row_num, col_num, hyperlink_formula)
+                    worksheet.write_url(row_num, col_num, relative_path, string=relative_path)
+                elif col_num == 2:
+                    logger.info(f'accessions: {accession_number}')
+                    if len(bold_indices) != 0:
+                        rich_text_parts = generate_rich_string(embedded_string, bold_indices, bold)
+                        worksheet.write_rich_string(row_num, col_num, *rich_text_parts)
+                    else:
+                        worksheet.write(row_num, col_num, cell_data)
+                else:
+                    worksheet.write(row_num, col_num, cell_data)
 
     # Set column widths and apply text wrap
     for col_num, heading in enumerate(column_headings):
@@ -174,7 +194,7 @@ def main(api_host, client_id, client_secret):
             worksheet.set_column(col_num, col_num, 30)
 
     # Apply text wrap to the entire sheet
-    for row_num in range(1, len(accessions_list_for_prediction) + 1):
+    for row_num in range(1, len(accessions) + 1):
         worksheet.set_row(row_num, 280)
 
     # Close the workbook
