@@ -1777,7 +1777,7 @@ def do_setup():
     # (PKG/_version.py, used by runtime code) are in MANIFEST.in, so
     # they'll be copied into source distributions. Pip won't be able to
     # install the package without this.
-    manifest_in = os.path.join(root, "MANIFEST.in")
+    manifest_in = os.path.join(root, "../MANIFEST.in")
     simple_includes = set()
     try:
         with open(manifest_in, "r") as f:
