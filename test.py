@@ -99,3 +99,4 @@ if __name__ == "__main__":
 
     bold_indices = find_bold_indices(text)
     print("Bold indices:", bold_indices)
+

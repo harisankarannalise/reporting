@@ -4,17 +4,27 @@ import json
 import base64
 from PIL import Image
 import io
-import numpy as np 
+import numpy as np
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 import argparse
 import os
 
+
 def proc(f):
-     return dict([(finding['label'], finding['predictionProbability']) for g in f['classification']['findings']['vision']['study']['classifications']['relevant'] for finding in g['findings']] + 
-                 [(finding['label'], finding['predictionProbability']) for finding in f['classification']['findings']['vision']['study']['classifications']['irrelevant']])
+    return dict([(finding['label'], finding['predictionProbability']) for g in
+                 f['classification']['findings']['vision']['study']['classifications']['relevant'] for finding in
+                 g['findings']] +
+                [(finding['label'], finding['predictionProbability']) for finding in
+                 f['classification']['findings']['vision']['study']['classifications']['irrelevant']])
+
+
 def get_threshold(f):
-     return dict([(finding['label'], finding['predictionThreshold']) for g in f['classification']['findings']['vision']['study']['classifications']['relevant'] for finding in g['findings']] + 
-                 [(finding['label'], finding['predictionThreshold']) for finding in f['classification']['findings']['vision']['study']['classifications']['irrelevant']])
+    return dict([(finding['label'], finding['predictionThreshold']) for g in
+                 f['classification']['findings']['vision']['study']['classifications']['relevant'] for finding in
+                 g['findings']] +
+                [(finding['label'], finding['predictionThreshold']) for finding in
+                 f['classification']['findings']['vision']['study']['classifications']['irrelevant']])
+
 
 def block_reduce(image, block_size, func):
     rows, cols = image.shape
@@ -29,6 +39,8 @@ def block_reduce(image, block_size, func):
             reduced_image[i, j] = func(block)
 
     return reduced_image
+
+
 def create_side_zone(arr):
     if arr.shape == (2,):
         if arr[0] == 1 and arr[1] == 0:
@@ -39,9 +51,9 @@ def create_side_zone(arr):
             return 'bilateral'
         elif arr[0] == 0 and arr[1] == 0:
             return None
-    elif arr.shape == (2,2):
+    elif arr.shape == (2, 2):
         coords = np.argwhere(arr)
-        strings = [f"{'right' if x == 0 else 'left'} {'upper' if y == 0 else 'lower'}" for y,x in coords]
+        strings = [f"{'right' if x == 0 else 'left'} {'upper' if y == 0 else 'lower'}" for y, x in coords]
         if 'right upper' in strings and 'right lower' in strings:
             strings.remove('right upper')
             strings.remove('right lower')
@@ -61,11 +73,11 @@ def create_side_zone(arr):
         if 'left lower' in strings and 'right lower' in strings:
             strings.remove('left lower')
             strings.remove('right lower')
-            strings.append('bilateral lower')    
+            strings.append('bilateral lower')
         if len(strings) > 1:
-            return ', '.join(strings[:-1]) + ' and ' + strings[-1]         
-        return ', '.join(strings)        
-    elif arr.shape == (3,2):
+            return ', '.join(strings[:-1]) + ' and ' + strings[-1]
+        return ', '.join(strings)
+    elif arr.shape == (3, 2):
         pass
     else:
         raise NotImplementedError(f'arr shape {arr.shape} not supported')
@@ -78,77 +90,179 @@ def generate_text_report(input_dir, output_dir):
         os.makedirs(output_dir)
     data = []
     ancillary_data = {}
+    failed_dict = {}
     for path in paths:
         with open(path) as f:
             raw_data = json.load(f)
+            if raw_data["get_log"] is not None:
+                failed_dict[path.lstrip('txt_report_gen/cxrjsons/').rstrip('.json')] = raw_data["get_log"]
+                continue
             d = proc(raw_data)
             filtered_images = []
+            if 'segmentation' not in raw_data or 'classification' not in raw_data or 'laterality' not in raw_data:
+                continue
+            if len(raw_data['segmentation']) == 0 or len(raw_data['laterality']) == 0:
+                continue
+
             for image in raw_data['classification']['findings']['vision']['images']:
                 filtered_images.append({k: v for k, v in image.items() if k in ['imageInstanceUid', 'viewPosition']})
             viewpositions = [d['viewPosition'] for d in filtered_images]
             filtered_image_uids = [d['imageInstanceUid'] for d in filtered_images if d['viewPosition'] in {'AP', 'PA'}]
 
-            pooled_segmentations3x2 = {}
-            pooled_segmentations2x2 = {}
-            pooled_lateralities = {}
+            pooled_segmentations3x2 = {'lesion_segmentation': np.array([[0, 0],
+                                                                        [0, 0],
+                                                                        [0, 0]]),
+                                       'internal_foreign_body_segmentation': np.array([[0, 0],
+                                                                                       [0, 0],
+                                                                                       [0, 0]]),
+                                       'scapular_lesion_segmentation': np.array([[0, 0],
+                                                                                 [0, 0],
+                                                                                 [0, 0]]),
+                                       'cvc_segmentation': np.array([[0, 0],
+                                                                     [0, 0],
+                                                                     [0, 0]]),
+                                       'pneumothorax_segmentation': np.array([[0, 0],
+                                                                              [0, 0],
+                                                                              [0, 0]]),
+                                       'ngt_segmentation': np.array([[0, 0],
+                                                                     [0, 0],
+                                                                     [0, 0]]),
+                                       'clavicle_lesion_segmentation': np.array([[0, 0],
+                                                                                 [0, 0],
+                                                                                 [0, 0]]),
+                                       'airspace_opacity_segmentation': np.array([[0, 0],
+                                                                                  [0, 0],
+                                                                                  [0, 0]]),
+                                       'rib_lesion_segmentation': np.array([[0, 0],
+                                                                            [0, 0],
+                                                                            [0, 0]]),
+                                       'collapse_segmentation': np.array([[0, 0],
+                                                                          [0, 0],
+                                                                          [0, 0]]),
+                                       'acute_rib_fracture_segmentation': np.array([[0, 0],
+                                                                                    [0, 0],
+                                                                                    [0, 0]]),
+                                       'effusion_segmentation': np.array([[0, 0],
+                                                                          [0, 0],
+                                                                          [0, 0]]),
+                                       'humeral_lesion_segmentation': np.array([[0, 0],
+                                                                                [0, 0],
+                                                                                [0, 0]]),
+                                       'pleural_mass_segmentation': np.array([[0, 0],
+                                                                              [0, 0],
+                                                                              [0, 0]])}
+            pooled_segmentations2x2 = {'lesion_segmentation': np.array([[0, 0],
+                                                                        [0, 0]]),
+                                       'internal_foreign_body_segmentation': np.array([[0, 0],
+                                                                                       [0, 0]]),
+                                       'scapular_lesion_segmentation': np.array([[0, 0],
+                                                                                 [0, 0]]),
+                                       'cvc_segmentation': np.array([[0, 0],
+                                                                     [0, 0]]),
+                                       'pneumothorax_segmentation': np.array([[0, 0],
+                                                                              [0, 0]]),
+                                       'ngt_segmentation': np.array([[0, 0],
+                                                                     [0, 0]]),
+                                       'clavicle_lesion_segmentation': np.array([[0, 0],
+                                                                                 [0, 0]]),
+                                       'airspace_opacity_segmentation': np.array([[0, 0],
+                                                                                  [0, 0]]),
+                                       'rib_lesion_segmentation': np.array([[0, 0],
+                                                                            [0, 0]]),
+                                       'collapse_segmentation': np.array([[0, 0],
+                                                                          [0, 0]]),
+                                       'acute_rib_fracture_segmentation': np.array([[0, 0],
+                                                                                    [0, 0]]),
+                                       'effusion_segmentation': np.array([[0, 0],
+                                                                          [0, 0]]),
+                                       'humeral_lesion_segmentation': np.array([[0, 0],
+                                                                                [0, 0]]),
+                                       'pleural_mass_segmentation': np.array([[0, 0],
+                                                                              [0, 0]])}
+            pooled_lateralities = {'acute_clavicle_fracture': np.array([0, 0]),
+                                   'acute_humerus_fracture': np.array([0, 0]),
+                                   'axillary_clips': np.array([0, 0]),
+                                   'clavicle_fixation': np.array([0, 0]),
+                                   'diffuse_airspace_opacity': np.array([0, 0]),
+                                   'diffuse_lower_airspace_opacity': np.array([0, 0]),
+                                   'diffuse_perihilar_airspace_opacity': np.array([0, 0]),
+                                   'diffuse_upper_airspace_opacity': np.array([0, 0]),
+                                   'intercostal_drain': np.array([0, 0]),
+                                   'interstitial_thickening_diffuse': np.array([0, 0]),
+                                   'interstitial_thickening_lower': np.array([0, 0]),
+                                   'interstitial_thickening_upper': np.array([0, 0]),
+                                   'interstitial_thickening_volloss_diffuse': np.array([0, 0]),
+                                   'interstitial_thickening_volloss_lower': np.array([0, 0]),
+                                   'interstitial_thickening_volloss_upper': np.array([0, 0]),
+                                   'lung_collapse': np.array([0, 0]),
+                                   'lung_resection_volloss': np.array([0, 0]),
+                                   'miliary': np.array([0, 0]),
+                                   'neck_clips': np.array([0, 0]),
+                                   'rib_fixation': np.array([0, 0]),
+                                   'rotator_cuff_anchor': np.array([0, 0]),
+                                   'scapular_fracture': np.array([0, 0]),
+                                   'shoulder_dislocation': np.array([0, 0]),
+                                   'shoulder_fixation': np.array([0, 0]),
+                                   'shoulder_replacement': np.array([0, 0]),
+                                   'subcutaneous_emphysema': np.array([0, 0])}
 
             for filtered_image in filtered_image_uids:
-                for key, png_bytes in raw_data['segmentation'][filtered_image].items():
-                    # Decode the PNG bytes
-                    decoded_image = base64.b64decode(png_bytes)
+                if filtered_image in raw_data['segmentation']:
+                    for key, png_bytes in raw_data['segmentation'][filtered_image].items():
+                        # Decode the PNG bytes
+                        decoded_image = base64.b64decode(png_bytes)
 
-                    # Open the image using PIL
-                    image = Image.open(io.BytesIO(decoded_image))
-                    image = np.array(image)[:,:,1]
+                        # Open the image using PIL
+                        image = Image.open(io.BytesIO(decoded_image))
+                        image = np.array(image)[:, :, 1]
 
-                    # 3 to allow it to be chopped into upper, middle, lower
-                    pooled_image = block_reduce(image, (image.shape[0]//3, image.shape[1]//2), np.max)
-                    if key not in pooled_segmentations3x2:                
-                        pooled_segmentations3x2[key] = pooled_image
-                    else:
-                        pooled_segmentations3x2[key] += pooled_image
-                        
-                    # 3 to allow it to be chopped into upper, middle, lower
-                    pooled_image = block_reduce(image, (image.shape[0]//2, image.shape[1]//2), np.max)
-                    if key not in pooled_segmentations2x2:                
-                        pooled_segmentations2x2[key] = pooled_image
-                    else:
-                        pooled_segmentations2x2[key] += pooled_image
+                        # 3 to allow it to be chopped into upper, middle, lower
+                        pooled_image = block_reduce(image, (image.shape[0] // 3, image.shape[1] // 2), np.max)
+                        if key not in pooled_segmentations3x2:
+                            pooled_segmentations3x2[key] = pooled_image.astype(int)
+                        else:
+                            pooled_segmentations3x2[key] += pooled_image.astype(int)
 
-                        
-                for key, side in raw_data['laterality'][filtered_image].items():
-                    if side == 'RIGHT':
-                        pooled_image = np.array([1,0])
-                    elif side == 'LEFT':
-                        pooled_image = np.array([0,1])
-                    elif side == 'BILATERAL':
-                        pooled_image = np.array([1,1])
-                    elif side == 'NONE':
-                        pooled_image = np.array([0,0])
-                    else:
-                        raise Exception(f'{side} not recognized for {key} for {path}')
-                    
-                    if key not in pooled_lateralities:                
-                        pooled_lateralities[key] = pooled_image
-                    else:
-                        pooled_lateralities[key] += pooled_image
+                        # 3 to allow it to be chopped into upper, middle, lower
+                        pooled_image = block_reduce(image, (image.shape[0] // 2, image.shape[1] // 2), np.max)
+                        if key not in pooled_segmentations2x2:
+                            pooled_segmentations2x2[key] = pooled_image.astype(int)
+                        else:
+                            pooled_segmentations2x2[key] += pooled_image.astype(int)
+
+                if filtered_image in raw_data['laterality']:
+                    for key, side in raw_data['laterality'][filtered_image].items():
+                        if side == 'RIGHT':
+                            pooled_image = np.array([1, 0]).astype(int)
+                        elif side == 'LEFT':
+                            pooled_image = np.array([0, 1]).astype(int)
+                        elif side == 'BILATERAL':
+                            pooled_image = np.array([1, 1]).astype(int)
+                        elif side == 'NONE':
+                            pooled_image = np.array([0, 0]).astype(int)
+                        else:
+                            raise Exception(f'{side} not recognized for {key} for {path}')
+
+                        if key not in pooled_lateralities:
+                            pooled_lateralities[key] = pooled_image
+                        else:
+                            pooled_lateralities[key] += pooled_image
 
             for key, value in pooled_segmentations2x2.items():
                 pooled_segmentations2x2[key] = (pooled_segmentations2x2[key] > 0)
 
             for key, value in pooled_segmentations3x2.items():
                 pooled_segmentations3x2[key] = (pooled_segmentations3x2[key] > 0)
-            
+
             for key, value in pooled_lateralities.items():
                 pooled_lateralities[key] = (pooled_lateralities[key] > 0)
 
-        
-
-            
         d['accession'] = path.split('/')[-1].replace('.json', '')
-        ancillary_data[d['accession'] ] = {'pooled_segmentations_3x2': pooled_segmentations3x2,'pooled_segmentations_2x2': pooled_segmentations2x2, 'pooled_lateralities': pooled_lateralities, 'viewpositions':viewpositions}
+        ancillary_data[d['accession']] = {'pooled_segmentations_3x2': pooled_segmentations3x2,
+                                          'pooled_segmentations_2x2': pooled_segmentations2x2,
+                                          'pooled_lateralities': pooled_lateralities, 'viewpositions': viewpositions}
         thresholds = get_threshold(raw_data)
-        for k,v in d.items():
+        for k, v in d.items():
             if k in thresholds:
                 d[k] = d[k] > thresholds[k]
         data.append(d)
@@ -156,49 +270,50 @@ def generate_text_report(input_dir, output_dir):
 
     section_mapping = {}
     for section, _df in pd.read_csv('txt_report_gen/fortis_spec.csv', index_col=0).groupby('Report Section'):
-        slug = section.strip().lower().replace(' ','_')
+        slug = section.strip().lower().replace(' ', '_')
         if slug not in section_mapping:
             section_mapping[slug] = []
         section_mapping[slug].extend(_df.index.tolist())
     section_mapping['projection'] = ['lat', 'multifrontal']
-
-
-
 
     env = Environment(
         loader=FileSystemLoader('txt_report_gen/templates/'),
         autoescape=select_autoescape(['html', 'xml', 'jinja'])
     )
 
-    bin_df = df 
-    defaults = {'projection':'Frontal chest radiograph.',
-                'technical_quality':'Satisfactory image quality.',
-                'cardiomediastinal':'Cardiac silhouette within normal limits. Normal mediastinal and hilar contours.',
-                'lung_parenchyma':'No significant parenchymal lung abnormality.',
-                'pleural_space':'Normal pleural spaces.',
+    bin_df = df
+    defaults = {'projection': 'Frontal chest radiograph.',
+                'technical_quality': 'Satisfactory image quality.',
+                'cardiomediastinal': 'Cardiac silhouette within normal limits. Normal mediastinal and hilar contours.',
+                'lung_parenchyma': 'No significant parenchymal lung abnormality.',
+                'pleural_space': 'Normal pleural spaces.',
                 'lines_and_tubes': "No lines or tubes identified.",
-                'bones':'No bony abnormality.',
-                'other':'No other findings.'}
-
+                'bones': 'No bony abnormality.',
+                'other': 'No other findings.'}
 
     for accession in bin_df.index:
         # get only positive columns
         bin_findings = bin_df.loc[accession]
         bin_findings['lat'] = 'LAT' in ancillary_data[accession]['viewpositions']
-        bin_findings['multifrontal'] = ('LAT' not in ancillary_data[accession]['viewpositions']) and len(ancillary_data[accession]['viewpositions']) > 1
+        bin_findings['multifrontal'] = ('LAT' not in ancillary_data[accession]['viewpositions']) and len(
+            ancillary_data[accession]['viewpositions']) > 1
         positive_findings = bin_findings[bin_findings]
-        
-        laterality_texts = {key+'_laterality': create_side_zone(values) for key, values in ancillary_data[accession]['pooled_lateralities'].items()}
-        zone2x2_texts = {key+'_zone2x2': create_side_zone(values) for key, values in ancillary_data[accession]['pooled_segmentations_2x2'].items()}
+
+        laterality_texts = {key + '_laterality': create_side_zone(values) for key, values in
+                            ancillary_data[accession]['pooled_lateralities'].items()}
+        zone2x2_texts = {key + '_zone2x2': create_side_zone(values) for key, values in
+                         ancillary_data[accession]['pooled_segmentations_2x2'].items()}
         # 1x2 is map but converted into left/right
-        zone_to_laterality_texts = {key+'_laterality': create_side_zone((values.sum(axis=0)>0).astype(int)) for key, values in ancillary_data[accession]['pooled_segmentations_2x2'].items()}
-        
+        zone_to_laterality_texts = {key + '_laterality': create_side_zone((values.sum(axis=0) > 0).astype(int)) for
+                                    key, values in ancillary_data[accession]['pooled_segmentations_2x2'].items()}
+
         template_components = {}
         for template_name in env.list_templates():
             template_name = template_name.replace('.jinja', '')
             if template_name != 'base_report':
                 template = env.get_template(template_name + '.jinja')
-                output = template.render(**bin_findings, **laterality_texts, **zone2x2_texts, **zone_to_laterality_texts)
+                output = template.render(**bin_findings, **laterality_texts, **zone2x2_texts,
+                                         **zone_to_laterality_texts)
                 # remove all empty lines (artifact of how my jinja templates are laid out)
                 output = ' '.join([line.capitalize() for line in output.split('\n') if len(line)])
                 if template_name != 'projection' and len(output):
@@ -206,9 +321,8 @@ def generate_text_report(input_dir, output_dir):
                 # if the section has no relevant findings, use the default
                 if template_name in section_mapping:
                     if not any([finding in section_mapping[template_name] for finding in positive_findings.index]):
-                        output = defaults[template_name]                    
+                        output = defaults[template_name]
                 template_components[template_name] = output
-
 
         template = env.get_template('base_report.jinja')
         output = template.render(**template_components)
@@ -216,16 +330,19 @@ def generate_text_report(input_dir, output_dir):
         output_path = os.path.join(output_dir, f"{accession}.txt")
         with open(output_path, "w") as f:
             f.write(output)
-        print (accession)
-        print (output)
-        print ('*******************************')
+        print(accession)
+        print(output)
+        print('*******************************')
+    return failed_dict
 
 
 if __name__ == '__main__':
     # Parse command line arguments
     parser = argparse.ArgumentParser()
-    parser.add_argument("input_dir", help="Path to the input directory", default='txt_report_gen/cxrjsons')
-    parser.add_argument("output_dir", help="Path to the output directory", default='ai_outputs/report_output')
+    parser.add_argument("input_dir", help="Path to the input directory",
+                        default=os.path.join("txt_report_gen", "cxrjsons"))
+    parser.add_argument("output_dir", help="Path to the output directory",
+                        default=os.path.join("ai_outputs", "report_output"))
     args = parser.parse_args()
 
     input_dir = args.input_dir

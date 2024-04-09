@@ -155,6 +155,9 @@ def generate_excel_report(accessions):
                 else:
                     worksheet.write(row_num, col_num, cell_data)
 
+        else:
+            print(f"accession: {accession_number}")
+
     # Set column widths and apply text wrap
     for col_num, heading in enumerate(column_headings):
         # max_length = max(len(str(new_row_data[col_num])) for new_row_data in
@@ -179,80 +182,99 @@ def generate_excel_report(accessions):
 
 
 def main(api_host, client_id, client_secret):
-    mi = model_interface.ModelInterface(
-        api_host, client_id, client_secret, wait_time=5, max_workers=10
-    )
+    # mi = model_interface.ModelInterface(
+    #     api_host, client_id, client_secret, wait_time=5, max_workers=10
+    # )
+    #
+    # results = mi.get_studies()
+    # data = results.json()
+    #
+    # # Extract accession numbers
+    # accessions = [study["accessionNumber"] for study in data["studies"]]
+    # accessions = accessions[0:len(accessions)]
+    #
+    # # Open the CSV file in write mode
+    # with open('accessions.csv', 'w', newline='') as file:
+    #     # Create a CSV writer object
+    #     writer = csv.writer(file)
+    #
+    #     # Write each element of the list as a separate row
+    #     for item in accessions:
+    #         writer.writerow([item])
+    #
+    # accessions_length = len(accessions)
+    # batch_size = 500
+    # num_batches = (accessions_length + batch_size - 1) // batch_size
+    # accession_batches = [accessions[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
+    #
+    # failed_dict = {}
+    #
+    # # accessions_list_for_prediction = accessions[0:2000]
+    # for batch_index, batch_accessions in enumerate(accession_batches):
+    #     logger.info(f'Fetching results for batch : {batch_index}')
+    #     # Get prediction results from BE
+    #     results = mi.bulk_get(batch_accessions)
+    #     for result in results:
+    #         # if result["classification"] == "REQUIRED_CXR_ERROR" or result["classification"] == "REQUIRED_AP_PA_IMAGE_ERROR" or result["classification"] == "ERROR" or result["classification"] == "MODEL_ERROR":
+    #         #     failed_dict[result["accession"]] = result["classification"]
+    #         if result["get_log"] is None:
+    #             json_file = path.join(output_location, f"{result['accession']}.json")
+    #             with open(json_file, 'w') as fp:
+    #                 json.dump(result, fp)
+    #         else:
+    #             failed_dict[result["accession"]] = result["classification"]
+    #
+    # for key in failed_dict:
+    #     accessions.remove(key)
+    #
+    # with open('failed_dict.csv', 'w', newline='') as file:
+    #     # Create a CSV writer object
+    #     writer = csv.writer(file)
+    #
+    #     # Write each key-value pair as a separate row
+    #     for key, value in failed_dict.items():
+    #         writer.writerow([key, value])
+    #
+    # # Open the CSV file in write mode
+    # with open('final_accessions.csv', 'w', newline='') as file:
+    #     # Create a CSV writer object
+    #     writer = csv.writer(file)
+    #
+    #     # Write each element of the list as a separate row
+    #     for item in accessions:
+    #         writer.writerow([item])
+    #
+    # logger.info(f'Failed dict : {failed_dict}')
 
-    results = mi.get_studies()
-    data = results.json()
+    # Generate txt report
+    failed_dict = generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')
 
-    # Extract accession numbers
-    accessions = [study["accessionNumber"] for study in data["studies"]]
-    accessions = accessions[0:2000]
-
-    # Open the CSV file in write mode
-    with open('accessions.csv', 'w', newline='') as file:
-        # Create a CSV writer object
-        writer = csv.writer(file)
-
-        # Write each element of the list as a separate row
-        for item in accessions:
-            writer.writerow([item])
-
-    accessions_length = len(accessions)
-    batch_size = 500
-    num_batches = (accessions_length + batch_size - 1) // batch_size
-    accession_batches = [accessions[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
-
-    failed_dict = {}
-
-    # accessions_list_for_prediction = accessions[0:2000]
-    for batch_index, batch_accessions in enumerate(accession_batches):
-        logger.info(f'Fetching results for batch : {batch_index}')
-        # Get prediction results from BE
-        results = mi.bulk_get(batch_accessions)
-        for result in results:
-            # if result["classification"] == "REQUIRED_CXR_ERROR" or result["classification"] == "REQUIRED_AP_PA_IMAGE_ERROR" or result["classification"] == "ERROR" or result["classification"] == "MODEL_ERROR":
-            #     failed_dict[result["accession"]] = result["classification"]
-            if result["get_log"] is None:
-                json_file = path.join(output_location, f"{result['accession']}.json")
-                with open(json_file, 'w') as fp:
-                    json.dump(result, fp)
-            else:
-                failed_dict[result["accession"]] = result["classification"]
+    # Accession number from excel
+    accessions = []
+    with open('accessions.csv', 'r') as file:
+        csv_reader = csv.reader(file)
+        for row in csv_reader:
+            combined_string = ''.join(row)
+            accessions.append(combined_string)
 
     for key in failed_dict:
         accessions.remove(key)
+    #
+    # failed_dict = {}
+    # for accession in accessions:
+    #     with open(f'txt_report_gen/cxrjsons/{accession}.json', 'r') as json_file:
+    #         logger.info(f'Accession check for {accession}')
+    #         result = json.load(json_file)
+    #         if result["get_log"] is None:
+    #             pass
+    #             # json_file = path.join(output_location, f"{result['accession']}.json")
+    #             # with open(json_file, 'w') as fp:
+    #             #     json.dump(result, fp)
+    #         else:
+    #             failed_dict[result["accession"]] = result["classification"]
+    #
+    # print(failed_dict)
 
-    with open('failed_dict.csv', 'w', newline='') as file:
-        # Create a CSV writer object
-        writer = csv.writer(file)
-
-        # Write each key-value pair as a separate row
-        for key, value in failed_dict.items():
-            writer.writerow([key, value])
-
-    # Open the CSV file in write mode
-    with open('final_accessions.csv', 'w', newline='') as file:
-        # Create a CSV writer object
-        writer = csv.writer(file)
-
-        # Write each element of the list as a separate row
-        for item in accessions:
-            writer.writerow([item])
-
-    logger.info(f'Failed dict : {failed_dict}')
-
-    # Generate txt report
-    generate_text_report('txt_report_gen/cxrjsons', 'ai_outputs/report_output')
-
-    # Accession number from excel
-    # accessions = []
-    # with open('final_accessions.csv', 'r') as file:
-    #     csv_reader = csv.reader(file)
-    #     for row in csv_reader:
-    #         combined_string = ''.join(row)
-    #         accessions.append(combined_string)
 
     # Generate excel report
     generate_excel_report(accessions)
