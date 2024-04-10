@@ -1,0 +1,15 @@
+text_report_folder: "txt_report_gen"
+ai_output_folder: "ai_outputs"
+
+cxrjons: "cxrjsons"
+failed_cxrjsons: "failed_cxrjsons"
+text_reports: "report_output"
+sc_output: "secondary_capture_output"
+consolidated_excel: "ai_output_consolidated.xlsx"
+
+accession_csv: "accessions.csv"
+failed_accession_csv: "failed_accessions.csv"
+final_accession_csv: "final_accessions.csv"
+
+
+

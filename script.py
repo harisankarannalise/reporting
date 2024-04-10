@@ -196,35 +196,58 @@ def generate_excel_report(accessions):
     logger.info("Excel file created successfully with the specified columns using xlsxwriter.")
 
 
+def list_files_in_folder(folder_path):
+    file_names = []
+    for file_name in os.listdir(folder_path):
+        if os.path.isfile(os.path.join(folder_path, file_name)):
+            file_names.append(file_name.replace('.json', ''))
+    return file_names
+
+
 def main(api_host, client_id, client_secret):
+    # create output folders if it does not exist
     for location in [cxrjsons_location, failed_cxrjsons_location, txt_report_location]:
         if not os.path.exists(location):
             os.makedirs(location)
 
+    # Initialize model interface
     mi = model_interface.ModelInterface(
         api_host, client_id, client_secret, wait_time=5, max_workers=10
     )
 
+    # API to get the list of accession  numbers
     results = mi.get_studies()
     data = results.json()
 
     # Extract accession numbers
-    accessions = [study["accessionNumber"] for study in data["studies"]]
-    # accessions = accessions[0:len(accessions)]
+    org_accessions = [study["accessionNumber"] for study in data["studies"]]
+
+    # Regular expression pattern to match strings that start with "test"
+    pattern = r'^test'
+
+    # Filter out accessions that start with "test"
+    accessions = [s for s in org_accessions if not re.match(pattern, s)]
+    accessions_for_get_results = accessions.copy()
 
     # Open the CSV file in write mode
     with open(config_data["accession_csv"], 'w', newline='') as file:
         # Create a CSV writer object
         writer = csv.writer(file)
+        writer.writerow('New AccessionNumber')
 
         # Write each element of the list as a separate row
         for item in accessions:
             writer.writerow([item])
 
-    accessions_length = len(accessions)
+    file_names = list_files_in_folder(cxrjsons_location)
+    for file in file_names:
+        if file in accessions_for_get_results:
+            accessions_for_get_results.remove(file)
+
+    accessions_length = len(accessions_for_get_results)
     batch_size = 500
     num_batches = (accessions_length + batch_size - 1) // batch_size
-    accession_batches = [accessions[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
+    accession_batches = [accessions_for_get_results[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
 
     failed_dict = {}
 
@@ -246,6 +269,7 @@ def main(api_host, client_id, client_secret):
 
     for key in failed_dict:
         accessions.remove(key)
+        accessions_for_get_results.remove(key)
 
     with open(config_data["failed_accession_csv"], 'w', newline='') as file:
         # Create a CSV writer object

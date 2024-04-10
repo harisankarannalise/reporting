@@ -1,3 +1,4 @@
 ai_outputs/
 txt_report_gen/cxrjsons/
+txt_report_gen/failed_cxrjsons/
 txt_report_gen/reports/
