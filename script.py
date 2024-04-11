@@ -71,129 +71,132 @@ def generate_rich_string(text, bold_indices, bold):
 
 
 def generate_excel_report(accessions):
-    # Create a new Excel workbook
-    workbook = xlsxwriter.Workbook(consolidated_excel_location)
+    try:
+        # Create a new Excel workbook
+        workbook = xlsxwriter.Workbook(consolidated_excel_location)
 
-    # Add a worksheet to the workbook
-    worksheet = workbook.add_worksheet()
+        # Add a worksheet to the workbook
+        worksheet = workbook.add_worksheet()
 
-    bold = workbook.add_format({"bold": True})
+        bold = workbook.add_format({"bold": True})
 
-    # Define column headings
-    column_headings = [
-        "Accession Number",
-        "List of Findings",
-        "Report Embedded",
-        "Link to Report Folder",
-        "Link to Secondary Capture Folder"
-    ]
+        # Define column headings
+        column_headings = [
+            "Accession Number",
+            "List of Findings",
+            "Report Embedded",
+            "Link to Report Folder",
+            "Link to Secondary Capture Folder"
+        ]
 
-    # Write column headings to the first row
-    for col_num, heading in enumerate(column_headings):
-        worksheet.write(0, col_num, heading)
+        # Write column headings to the first row
+        for col_num, heading in enumerate(column_headings):
+            worksheet.write(0, col_num, heading)
 
-    # Directory path
-    pwd = os.getcwd()
+        # Directory path
+        pwd = os.getcwd()
 
-    # Sample accessions list
-    # accessions = ['0cfa3270d06d3']
+        # Iterate over accessions
+        for row_num, accession_number in enumerate(accessions, start=1):
+            try:
+                if os.path.exists(os.path.join(txt_report_location, f'{accession_number}.txt')):
+                    with open(os.path.join(txt_report_location, f'{accession_number}.txt'), 'r') as file:
+                        lines = file.readlines()
 
-    # Iterate over accessions
-    for row_num, accession_number in enumerate(accessions, start=1):
-        if os.path.exists(os.path.join(txt_report_location, f'{accession_number}.txt')):
-            with open(os.path.join(txt_report_location, f'{accession_number}.txt'), 'r') as file:
-                lines = file.readlines()
+                    with open(os.path.join(cxrjsons_location, f'{accession_number}.json'), 'r') as json_file:
+                        model_output = json.load(json_file)
 
-            with open(os.path.join(cxrjsons_location, f'{accession_number}.json'), 'r') as json_file:
-                model_output = json.load(json_file)
+                    finding_labels = []
 
-            finding_labels = []
+                    relevant_findings = model_output["classification"]["findings"]["vision"]["study"]["classifications"][
+                        "relevant"]
 
-            relevant_findings = model_output["classification"]["findings"]["vision"]["study"]["classifications"][
-                "relevant"]
+                    def sorting_key(finding):
+                        return finding["assignPriorityId"], finding["displayOrder"]
 
-            def sorting_key(finding):
-                return finding["assignPriorityId"], finding["displayOrder"]
+                    sorted_findings = []
+                    for group in relevant_findings:
+                        findings_list = group["findings"]
+                        sorted_findings.extend(sorted(findings_list, key=sorting_key))
 
-            sorted_findings = []
-            for group in relevant_findings:
-                findings_list = group["findings"]
-                sorted_findings.extend(sorted(findings_list, key=sorting_key))
+                    finding_labels = [f'{finding["labelName"]}\n' for finding in sorted_findings]
+                    if len(finding_labels) == 0:
+                        finding_labels.append('<No findings present>')
 
-            finding_labels = [f'{finding["labelName"]}\n' for finding in sorted_findings]
-            if len(finding_labels) == 0:
-                finding_labels.append('<No findings present>')
+                    embedded_string = ''.join(lines)
+                    findings_string = ''.join(finding_labels)
 
-            embedded_string = ''.join(lines)
-            findings_string = ''.join(finding_labels)
+                    # text report path
+                    folder_path = os.path.join(pwd, txt_report_location, f'{accession_number}.txt')
+                    relative_path = os.path.relpath(folder_path, os.path.join(pwd, config_data["ai_output_folder"]))
+                    link_to_folder = f'file://{relative_path}'
 
-            # text report path
-            folder_path = os.path.join(pwd, txt_report_location, f'{accession_number}.txt')
-            relative_path = os.path.relpath(folder_path, os.path.join(pwd, config_data["ai_output_folder"]))
-            link_to_folder = f'file://{relative_path}'
+                    # SC report path
+                    sc_folder_path = os.path.join(pwd, sc_location, f'{accession_number}')
+                    sc_relative_path = os.path.relpath(sc_folder_path, os.path.join(pwd, config_data["ai_output_folder"]))
+                    link_to_sc_folder = f'file://{sc_relative_path}'
 
-            # SC report path
-            sc_folder_path = os.path.join(pwd, sc_location, f'{accession_number}')
-            sc_relative_path = os.path.relpath(sc_folder_path, os.path.join(pwd, config_data["ai_output_folder"]))
-            link_to_sc_folder = f'file://{sc_relative_path}'
+                    # Write data to the worksheet
+                    new_row_data = [
+                        accession_number,  # Accession Number
+                        findings_string,  # List of Findings
+                        embedded_string,  # Report Embedded
+                        link_to_folder,  # Link to Report Folder
+                        link_to_sc_folder  # Link to Secondary Capture Folder
+                    ]
 
-            # Write data to the worksheet
-            new_row_data = [
-                accession_number,  # Accession Number
-                findings_string,  # List of Findings
-                embedded_string,  # Report Embedded
-                link_to_folder,  # Link to Report Folder
-                link_to_sc_folder  # Link to Secondary Capture Folder
-            ]
+                    bold_indices = find_bold_indices(embedded_string)
 
-            bold_indices = find_bold_indices(embedded_string)
+                    for col_num, cell_data in enumerate(new_row_data):
+                        cell_format = workbook.add_format({
+                            'text_wrap': True,  # wrap text
+                            'valign': 'vcenter'  # vertical alignment to middle
+                        })
+                        if col_num == 3:  # Add hyperlink for the "Link to Report Folder" column
+                            # hyperlink_formula = f'=HYPERLINK("{relative_path}", "{relative_path}")'
+                            # worksheet.write_formula(row_num, col_num, hyperlink_formula)
+                            worksheet.write_url(row_num, col_num, relative_path, string=relative_path, cell_format=cell_format)
+                        elif col_num == 4:
+                            worksheet.write_url(row_num, col_num, sc_relative_path, string=sc_relative_path, cell_format=cell_format)
+                        elif col_num == 2:
+                            logger.info(f'accessions: {accession_number}')
+                            if len(bold_indices) != 0:
+                                rich_text_parts = generate_rich_string(embedded_string, bold_indices, bold)
+                                # rich_text_parts.append(cell_format)
+                                worksheet.write_rich_string(row_num, col_num, *rich_text_parts, cell_format)
+                            else:
+                                worksheet.write(row_num, col_num, cell_data, cell_format)
+                        else:
+                            worksheet.write(row_num, col_num, cell_data, cell_format)
 
-            for col_num, cell_data in enumerate(new_row_data):
-                cell_format = workbook.add_format({
-                    'text_wrap': True,  # wrap text
-                    'valign': 'vcenter'  # vertical alignment to middle
-                })
-                if col_num == 3:  # Add hyperlink for the "Link to Report Folder" column
-                    # hyperlink_formula = f'=HYPERLINK("{relative_path}", "{relative_path}")'
-                    # worksheet.write_formula(row_num, col_num, hyperlink_formula)
-                    worksheet.write_url(row_num, col_num, relative_path, string=relative_path, cell_format=cell_format)
-                elif col_num == 4:
-                    worksheet.write_url(row_num, col_num, sc_relative_path, string=sc_relative_path, cell_format=cell_format)
-                elif col_num == 2:
-                    logger.info(f'accessions: {accession_number}')
-                    if len(bold_indices) != 0:
-                        rich_text_parts = generate_rich_string(embedded_string, bold_indices, bold)
-                        # rich_text_parts.append(cell_format)
-                        worksheet.write_rich_string(row_num, col_num, *rich_text_parts, cell_format)
-                    else:
-                        worksheet.write(row_num, col_num, cell_data, cell_format)
                 else:
-                    worksheet.write(row_num, col_num, cell_data, cell_format)
+                    print(f"accession: {accession_number}")
+            except Exception as e:
+                logger.error(f'Error processing accession {accession_number}: {e}')
 
-        else:
-            print(f"accession: {accession_number}")
+        # Set column widths and apply text wrap
+        for col_num, heading in enumerate(column_headings):
+            # max_length = max(len(str(new_row_data[col_num])) for new_row_data in
+            #                  [worksheet.row_values(row_num) for row_num in range(worksheet.dim_rowmax + 1)])
+            if col_num == 2:
+                worksheet.set_column(col_num, col_num, 170)
+            elif col_num == 1:
+                worksheet.set_column(col_num, col_num, 50)
+            elif col_num == 3 or col_num == 4:
+                worksheet.set_column(col_num, col_num, 45)
+            else:
+                worksheet.set_column(col_num, col_num, 30)
 
-    # Set column widths and apply text wrap
-    for col_num, heading in enumerate(column_headings):
-        # max_length = max(len(str(new_row_data[col_num])) for new_row_data in
-        #                  [worksheet.row_values(row_num) for row_num in range(worksheet.dim_rowmax + 1)])
-        if col_num == 2:
-            worksheet.set_column(col_num, col_num, 170)
-        elif col_num == 1:
-            worksheet.set_column(col_num, col_num, 50)
-        elif col_num == 3 or col_num == 4:
-            worksheet.set_column(col_num, col_num, 45)
-        else:
-            worksheet.set_column(col_num, col_num, 30)
+        # Apply text wrap to the entire sheet
+        for row_num in range(1, len(accessions) + 1):
+            worksheet.set_row(row_num, 280)
 
-    # Apply text wrap to the entire sheet
-    for row_num in range(1, len(accessions) + 1):
-        worksheet.set_row(row_num, 280)
+        # Close the workbook
+        workbook.close()
 
-    # Close the workbook
-    workbook.close()
-
-    logger.info("Excel file created successfully with the specified columns using xlsxwriter.")
+        logger.info("Excel file created successfully with the specified columns using xlsxwriter.")
+    except Exception as e:
+        logger.error(f'Error creating Excel file: {e}')
 
 
 def list_files_in_folder(folder_path):
@@ -205,122 +208,104 @@ def list_files_in_folder(folder_path):
 
 
 def main(api_host, client_id, client_secret):
-    # create output folders if it does not exist
-    for location in [cxrjsons_location, failed_cxrjsons_location, txt_report_location]:
-        if not os.path.exists(location):
-            os.makedirs(location)
+    try:
+        # create output folders if they do not exist
+        for location in [cxrjsons_location, failed_cxrjsons_location, txt_report_location]:
+            if not os.path.exists(location):
+                os.makedirs(location)
 
-    # Initialize model interface
-    mi = model_interface.ModelInterface(
-        api_host, client_id, client_secret, wait_time=5, max_workers=10
-    )
+        # Initialize model interface
+        mi = model_interface.ModelInterface(
+            api_host, client_id, client_secret, wait_time=5, max_workers=10
+        )
 
-    # API to get the list of accession  numbers
-    results = mi.get_studies()
-    data = results.json()
+        # API to get the list of accession numbers
+        results = mi.get_studies()
+        data = results.json()
 
-    # Extract accession numbers
-    org_accessions = [study["accessionNumber"] for study in data["studies"]]
+        # Extract accession numbers
+        org_accessions = [study["accessionNumber"] for study in data["studies"]]
 
-    # Regular expression pattern to match strings that start with "test"
-    pattern = r'^test'
+        # Regular expression pattern to match strings that start with "test"
+        pattern = r'^test'
 
-    # Filter out accessions that start with "test"
-    accessions = [s for s in org_accessions if not re.match(pattern, s)]
-    accessions_for_get_results = accessions.copy()
+        # Filter out accessions that start with "test"
+        accessions = [s for s in org_accessions if not re.match(pattern, s)]
+        accessions_for_get_results = accessions.copy()
 
-    # Open the CSV file in write mode
-    with open(config_data["accession_csv"], 'w', newline='') as file:
-        # Create a CSV writer object
-        writer = csv.writer(file)
-        writer.writerow('New AccessionNumber')
+        # Open the CSV file in write mode
+        with open(config_data["accession_csv"], 'w', newline='') as file:
+            # Create a CSV writer object
+            writer = csv.writer(file)
+            writer.writerow(['New AccessionNumber'])
 
-        # Write each element of the list as a separate row
-        for item in accessions:
-            writer.writerow([item])
+            # Write each element of the list as a separate row
+            for item in accessions:
+                writer.writerow([item])
 
-    file_names = list_files_in_folder(cxrjsons_location)
-    for file in file_names:
-        if file in accessions_for_get_results:
-            accessions_for_get_results.remove(file)
+        file_names = list_files_in_folder(cxrjsons_location)
+        for file in file_names:
+            if file in accessions_for_get_results:
+                accessions_for_get_results.remove(file)
 
-    accessions_length = len(accessions_for_get_results)
-    batch_size = 500
-    num_batches = (accessions_length + batch_size - 1) // batch_size
-    accession_batches = [accessions_for_get_results[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
+        accessions_length = len(accessions_for_get_results)
+        batch_size = 500
+        num_batches = (accessions_length + batch_size - 1) // batch_size
+        accession_batches = [accessions_for_get_results[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
 
-    failed_dict = {}
+        failed_dict = {}
 
-    # accessions_list_for_prediction = accessions[0:2000]
-    for batch_index, batch_accessions in enumerate(accession_batches):
-        logger.info(f'Fetching results for batch : {batch_index}')
-        # Get prediction results from BE
-        results = mi.bulk_get(batch_accessions)
-        for result in results:
-            if result["get_log"] is None:
-                json_file = path.join(cxrjsons_location, f"{result['accession']}.json")
-                with open(json_file, 'w') as fp:
-                    json.dump(result, fp)
-            else:
-                json_file = path.join(failed_cxrjsons_location, f"{result['accession']}.json")
-                with open(json_file, 'w') as fp:
-                    json.dump(result, fp)
-                failed_dict[result["accession"]] = result["classification"]
+        # accessions_list_for_prediction = accessions[0:2000]
+        for batch_index, batch_accessions in enumerate(accession_batches):
+            logger.info(f'Fetching results for batch : {batch_index}')
+            # Get prediction results from BE
+            results = mi.bulk_get(batch_accessions)
+            for result in results:
+                try:
+                    if result["get_log"] is None:
+                        json_file = path.join(cxrjsons_location, f"{result['accession']}.json")
+                        with open(json_file, 'w') as fp:
+                            json.dump(result, fp)
+                    else:
+                        json_file = path.join(failed_cxrjsons_location, f"{result['accession']}.json")
+                        with open(json_file, 'w') as fp:
+                            json.dump(result, fp)
+                        failed_dict[result["accession"]] = result["classification"]
+                except Exception as e:
+                    logger.error(f'Error while processing result: {e}')
 
-    for key in failed_dict:
-        accessions.remove(key)
-        accessions_for_get_results.remove(key)
+        for key in failed_dict:
+            accessions.remove(key)
+            accessions_for_get_results.remove(key)
 
-    with open(config_data["failed_accession_csv"], 'w', newline='') as file:
-        # Create a CSV writer object
-        writer = csv.writer(file)
+        with open(config_data["failed_accession_csv"], 'w', newline='') as file:
+            # Create a CSV writer object
+            writer = csv.writer(file)
 
-        # Write each key-value pair as a separate row
-        for key, value in failed_dict.items():
-            writer.writerow([key, value])
+            # Write each key-value pair as a separate row
+            for key, value in failed_dict.items():
+                writer.writerow([key, value])
 
-    # Open the CSV file in write mode
-    with open(config_data["final_accession_csv"], 'w', newline='') as file:
-        # Create a CSV writer object
-        writer = csv.writer(file)
+        # Open the CSV file in write mode
+        with open(config_data["final_accession_csv"], 'w', newline='') as file:
+            # Create a CSV writer object
+            writer = csv.writer(file)
 
-        # Write each element of the list as a separate row
-        for item in accessions:
-            writer.writerow([item])
+            # Write each element of the list as a separate row
+            for item in accessions:
+                writer.writerow([item])
 
-    logger.info(f'Failed dict : {failed_dict}')
+        logger.info(f'Failed dict : {failed_dict}')
 
-    # Generate txt report
-    generate_text_report(cxrjsons_location, txt_report_location)
+        # Generate txt report
+        generate_text_report(cxrjsons_location, txt_report_location)
 
-    # # Accession number from excel
-    # accessions = []
-    # with open('accessions.csv', 'r') as file:
-    #     csv_reader = csv.reader(file)
-    #     for row in csv_reader:
-    #         combined_string = ''.join(row)
-    #         accessions.append(combined_string)
-    #
-    # for key in failed_dict:
-    #     accessions.remove(key)
-    # #
-    # failed_dict = {}
-    # for accession in accessions:
-    #     with open(f'txt_report_gen/cxrjsons/{accession}.json', 'r') as json_file:
-    #         logger.info(f'Accession check for {accession}')
-    #         result = json.load(json_file)
-    #         if result["get_log"] is None:
-    #             pass
-    #             # json_file = path.join(output_location, f"{result['accession']}.json")
-    #             # with open(json_file, 'w') as fp:
-    #             #     json.dump(result, fp)
-    #         else:
-    #             failed_dict[result["accession"]] = result["classification"]
-    #
-    # print(failed_dict)
+        # Generate excel report
+        generate_excel_report(accessions)
 
-    # Generate excel report
-    generate_excel_report(accessions)
+    except Exception as e:
+        logger.error(f'An error occurred in the main function: {e}')
+        raise e
 
 
 if __name__ == "__main__":
