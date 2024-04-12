@@ -32,6 +32,7 @@ logging.basicConfig(
     datefmt='%H:%M:%S %d/%m/%y ',
 )
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def find_bold_indices(text):
@@ -162,8 +163,12 @@ def generate_excel_report(accessions):
                             logger.info(f'accessions: {accession_number}')
                             if len(bold_indices) != 0:
                                 rich_text_parts = generate_rich_string(embedded_string, bold_indices, bold)
-                                # rich_text_parts.append(cell_format)
-                                worksheet.write_rich_string(row_num, col_num, *rich_text_parts, cell_format)
+                                # Replace each tab character with four spaces
+                                new_rich_text_parts = [
+                                    (part.replace('\t', '       ')) if isinstance(part, str) else part
+                                    for part in rich_text_parts
+                                ]
+                                worksheet.write_rich_string(row_num, col_num, *new_rich_text_parts, cell_format)
                             else:
                                 worksheet.write(row_num, col_num, cell_data, cell_format)
                         else:
