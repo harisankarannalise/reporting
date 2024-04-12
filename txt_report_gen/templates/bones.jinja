@@ -22,10 +22,6 @@ Acute {{ acute_humerus_fracture_laterality }} humeral fractures are noted.
 {% endif %}
 
 
-{% if chronic_humerus_fracture %}
-Chronic humeral fracture(s) noted.
-{% endif %}
-
 {% if clavicle_fixation and clavicle_fixation_laterality in ['left', 'right'] %}
 Fixation of the {{ clavicle_fixation_laterality }} clavicle.
 {% endif %}
@@ -33,9 +29,6 @@ Fixation of the {{ clavicle_fixation_laterality }} clavicle.
 Fixation of {{ clavicle_fixation_laterality }} clavicles.
 {% endif %}
 
-{% if chronic_humerus_fracture %}
-Chronic humeral fracture(s) noted.
-{% endif %}
 {% if rib_fixation and rib_fixation_laterality in ['left', 'right', 'bilateral'] %}
 Internal {{ rib_fixation_laterality }} rib fixation noted.
 {% endif %}

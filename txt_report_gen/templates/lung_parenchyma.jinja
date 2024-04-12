@@ -61,54 +61,51 @@ Diffuse {{ miliary_laterality }} lung opacities noted.
 Diffuse {{ diffuse_perihilar_airspace_opacity_laterality }} perihilar airspace opacity.
 {% endif %}
 
-
 {% if calcified_pulmonary_mass and lesion_segmentation_laterality in ['left', 'right', 'bilateral'] %}
 {{ lesion_segmentation_laterality }} calcified lung lesion.
 {% endif %}
 
-{% if cavitating_mass and lesion_segmentation_laterality in ['left', 'right', 'bilateral'] %}
+{% if cavitating_mass and cavitating_mass_internal_content and lesion_segmentation_laterality in ['left', 'right', 'bilateral'] %}
+Cavitating lesion in the {{ lesion_segmentation_laterality }} lung with fluid level.
+{% elif cavitating_mass and lesion_segmentation_laterality in ['left', 'right', 'bilateral'] %}
 Cavitating lesion in the {{ lesion_segmentation_laterality }} lung.
-{% endif %}
-
-{% if cavitating_mass_internal_content and lesion_segmentation_laterality in ['left', 'right', 'bilateral'] %}
+{% elif cavitating_mass_internal_content and lesion_segmentation_laterality in ['left', 'right', 'bilateral'] %}
 Cavitating lesion in the {{ lesion_segmentation_laterality }} lung with fluid level.
 {% endif %}
 
-{% if linear_atelectasis and collapse_segmentation_zone2x2 %}
-Atelectasis noted in the {{ collapse_segmentation_zone2x2 }} lung.
-{% endif %}
-
-{% if segmental_collapse and collapse_segmentation_zone2x2 %}
+{% if segmental_collapse and linear_atelectasis and collapse_segmentation_zone2x2 %}
+{{ collapse_segmentation_zone2x2 }} zone collapse and atelectasis.
+{% elif segmental_collapse %}
 {{ collapse_segmentation_zone2x2 }} zone collapse.
+{% elif linear_atelectasis %}
+{{ collapse_segmentation_zone2x2 }} zone atelectasis.
 {% endif %}
-
-
 
 
 {% if multifocal_airspace_opacity and airspace_opacity_segmentation_laterality in ['left', 'right'] %}
-Multifocal airspace opacities in the {{ airspace_opacity_segmentation_laterality }} lung.
+Multifocal airspace opacities in {{ airspace_opacity_segmentation_laterality }} lung.
 {% endif %}
 {% if multifocal_airspace_opacity and airspace_opacity_segmentation_laterality in ['bilateral'] %}
 Multifocal airspace opacities in {{ airspace_opacity_segmentation_laterality }} lungs.
 {% endif %}
 
 {% if multiple_pulmonary_masses and lesion_segmentation_laterality in ['left', 'right'] %}
-Multiple lung lesions noted in the {{ lesion_segmentation_laterality }} lung.
+Multiple lung lesions noted in {{ lesion_segmentation_laterality }} lung.
 {% endif %}
 {% if multiple_pulmonary_masses and lesion_segmentation_laterality in ['bilateral'] %}
 Multiple lung lesions noted in {{ lesion_segmentation_laterality }} lungs.
 {% endif %}
 
 {% if focal_airspace_opacity and airspace_opacity_segmentation_zone2x2 %}
-Focal airspace opacity in the {{ airspace_opacity_segmentation_zone2x2 }} zone.
+Focal airspace opacity in {{ airspace_opacity_segmentation_zone2x2 }} lung(s).
 {% endif %}
 
 {% if single_pulmonary_mass and lesion_segmentation_zone2x2  %}
-Focal well defined mass(es) in the {{ lesion_segmentation_zone2x2 }} zone.
+Focal well defined mass(es) in {{ lesion_segmentation_zone2x2 }} lung(s).
 {% endif %}
 
 {% if single_pulmonary_nodule and lesion_segmentation_zone2x2 %}
-Focal well defined nodule(s) in the {{ lesion_segmentation_zone2x2 }} zone.
+Focal well defined nodule(s) in {{ lesion_segmentation_zone2x2 }} lung(s).
 {% endif %}
 
 {% if airway_stent %}Airways stent present.{% endif %}

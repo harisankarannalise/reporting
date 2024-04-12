@@ -1,42 +1,41 @@
 
 
+{% if in_position_pac %}
+Pulmonary artery catheter in situ.
+{% endif %}
 
 {% if malpositioned_pac %}
-Suboptimal positioning of the pulmonary artery catheter.
-{% endif %}
-
-{% if malpositioned_ngt %}
-Enteric tube in situ, incompletely visualised or with suboptimal position.
-{% endif %}
-
-{% if malpositioned_ett %}
-Endotracheal tube present, suboptimally positioned.
-{% endif %}
-
-{% if malpositioned_cvc and cvc_segmentation_laterality %}
-{{ cvc_segmentation_laterality }} central line(s) in situ, at least one of which is suboptimally positioned.
-{% endif %}
-
-{% if intercostal_drain and intercostal_drain_laterality in ['left', 'right'] %}
-{{ intercostal_drain_laterality }} shoulder replacement.
-{% endif %}
-{% if intercostal_drain and intercostal_drain_laterality in ['bilateral'] %}
-{{ intercostal_drain_laterality }} shoulder replacements.
-{% endif %}
-
-
-{% if in_position_pac %}
-Pulmonary artery catheter in situ, appropriately sited.
+The pulmonary artery catheter may be malpositioned.
 {% endif %}
 
 {% if in_position_ngt %}
 Enteric tube in situ.
 {% endif %}
 
+{% if malpositioned_ngt %}
+The enteric tube may be incompletely visualised or suboptimally positioned.
+{% endif %}
+
 {% if in_position_ett %}
-The patient is ventilated, with an endotracheal tube within the trachea, appropriately positioned.
+Endotracheal tube present.
+{% endif %}
+
+{% if malpositioned_ett %}
+The endotracheal tube may be suboptimally positioned.
 {% endif %}
 
 {% if in_position_cvc and cvc_segmentation_laterality %}
 {{ cvc_segmentation_laterality }} central line(s) in situ.
 {% endif %}
+
+{% if malpositioned_cvc and cvc_segmentation_laterality %}
+Central line(s) may be suboptimally positioned.
+{% endif %}
+
+{% if intercostal_drain and intercostal_drain_laterality in ['left', 'right'] %}
+{{ intercostal_drain_laterality }} intercostal drain.
+{% endif %}
+{% if intercostal_drain and intercostal_drain_laterality in ['bilateral'] %}
+{{ intercostal_drain_laterality }} intercostal drains.
+{% endif %}
+
