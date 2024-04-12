@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import re
+import traceback
 from datetime import datetime
 from os import path
 import xlsxwriter
@@ -178,6 +179,7 @@ def generate_excel_report(accessions):
                     print(f"accession: {accession_number}")
             except Exception as e:
                 logger.error(f'Error processing accession {accession_number}: {e}')
+                raise e
 
         # Set column widths and apply text wrap
         for col_num, heading in enumerate(column_headings):
@@ -202,6 +204,8 @@ def generate_excel_report(accessions):
         logger.info("Excel file created successfully with the specified columns using xlsxwriter.")
     except Exception as e:
         logger.error(f'Error creating Excel file: {e}')
+        traceback.print_exc()
+        raise
 
 
 def list_files_in_folder(folder_path):
@@ -278,6 +282,7 @@ def main(api_host, client_id, client_secret):
                         failed_dict[result["accession"]] = result["classification"]
                 except Exception as e:
                     logger.error(f'Error while processing result: {e}')
+                    raise e
 
         for key in failed_dict:
             accessions.remove(key)
@@ -310,6 +315,7 @@ def main(api_host, client_id, client_secret):
 
     except Exception as e:
         logger.error(f'An error occurred in the main function: {e}')
+        traceback.print_exc()
         raise e
 
 
