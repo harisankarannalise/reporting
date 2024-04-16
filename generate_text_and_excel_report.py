@@ -246,7 +246,7 @@ def main(api_host, client_id, client_secret):
         org_accessions = [study["accessionNumber"] for study in data["studies"]]
 
         # Regular expression pattern to match strings that start with "test"
-        pattern = r'^59747435|^52159036'
+        pattern = r'^test'
 
         # Filter out accessions that start with "test"
         accessions = [s for s in org_accessions if not re.match(pattern, s)]
