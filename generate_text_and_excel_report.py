@@ -63,7 +63,7 @@ def generate_rich_string(text, bold_indices, bold):
         if start_index < bold_start:
             parts.append(text[start_index:bold_start])
         parts.append(bold)
-        parts.append(text[bold_start+3:bold_end])
+        parts.append(text[bold_start + 3:bold_end])
         start_index = bold_end + 4
 
     if start_index < len(text):
@@ -81,19 +81,25 @@ def generate_excel_report(accessions):
         worksheet = workbook.add_worksheet()
 
         bold = workbook.add_format({"bold": True})
+        heading_format = workbook.add_format({
+            'text_wrap': True,  # wrap text
+            'valign': 'vcenter',  # vertical alignment to middle
+            'align': 'center',  # horizontal alignment to center
+            'bold': True  # make text bold
+        })
 
         # Define column headings
         column_headings = [
             "Accession Number",
-            "List of Findings",
-            "Report Embedded",
+            "List of Annalise findings",
+            "Embedded Report",
             "Link to Report Folder",
             "Link to Secondary Capture Folder"
         ]
 
         # Write column headings to the first row
         for col_num, heading in enumerate(column_headings):
-            worksheet.write(0, col_num, heading)
+            worksheet.write(0, col_num, heading, heading_format)
 
         # Directory path
         pwd = os.getcwd()
@@ -110,7 +116,8 @@ def generate_excel_report(accessions):
 
                     finding_labels = []
 
-                    relevant_findings = model_output["classification"]["findings"]["vision"]["study"]["classifications"][
+                    relevant_findings = \
+                    model_output["classification"]["findings"]["vision"]["study"]["classifications"][
                         "relevant"]
 
                     def sorting_key(finding):
@@ -135,7 +142,8 @@ def generate_excel_report(accessions):
 
                     # SC report path
                     sc_folder_path = os.path.join(pwd, sc_location, f'{accession_number}')
-                    sc_relative_path = os.path.relpath(sc_folder_path, os.path.join(pwd, config_data["ai_output_folder"]))
+                    sc_relative_path = os.path.relpath(sc_folder_path,
+                                                       os.path.join(pwd, config_data["ai_output_folder"]))
                     link_to_sc_folder = f'file://{sc_relative_path}'
 
                     # Write data to the worksheet
@@ -157,9 +165,11 @@ def generate_excel_report(accessions):
                         if col_num == 3:  # Add hyperlink for the "Link to Report Folder" column
                             # hyperlink_formula = f'=HYPERLINK("{relative_path}", "{relative_path}")'
                             # worksheet.write_formula(row_num, col_num, hyperlink_formula)
-                            worksheet.write_url(row_num, col_num, relative_path, string=relative_path, cell_format=cell_format)
+                            worksheet.write_url(row_num, col_num, relative_path, string=link_to_folder,
+                                                cell_format=cell_format)
                         elif col_num == 4:
-                            worksheet.write_url(row_num, col_num, sc_relative_path, string=sc_relative_path, cell_format=cell_format)
+                            worksheet.write_url(row_num, col_num, sc_relative_path, string=link_to_sc_folder,
+                                                cell_format=cell_format)
                         elif col_num == 2:
                             logger.info(f'accessions: {accession_number}')
                             if len(bold_indices) != 0:
@@ -236,7 +246,7 @@ def main(api_host, client_id, client_secret):
         org_accessions = [study["accessionNumber"] for study in data["studies"]]
 
         # Regular expression pattern to match strings that start with "test"
-        pattern = r'^test'
+        pattern = r'^59747435|^52159036'
 
         # Filter out accessions that start with "test"
         accessions = [s for s in org_accessions if not re.match(pattern, s)]
@@ -260,7 +270,8 @@ def main(api_host, client_id, client_secret):
         accessions_length = len(accessions_for_get_results)
         batch_size = 500
         num_batches = (accessions_length + batch_size - 1) // batch_size
-        accession_batches = [accessions_for_get_results[i * batch_size:(i + 1) * batch_size] for i in range(num_batches)]
+        accession_batches = [accessions_for_get_results[i * batch_size:(i + 1) * batch_size] for i in
+                             range(num_batches)]
 
         failed_dict = {}
 
@@ -340,9 +351,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if (
-        args.api_host is not None
-        and args.client_id is not None
-        and args.client_secret is not None
+            args.api_host is not None
+            and args.client_id is not None
+            and args.client_secret is not None
     ):
         main(
             args.api_host,
