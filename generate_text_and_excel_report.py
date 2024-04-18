@@ -72,7 +72,7 @@ def generate_rich_string(text, bold_indices, bold):
     return parts
 
 
-def generate_excel_report(accessions):
+def generate_excel_report(accessions, failed_accessions_dict):
     try:
         # Create a new Excel workbook
         workbook = xlsxwriter.Workbook(consolidated_excel_location)
@@ -94,7 +94,8 @@ def generate_excel_report(accessions):
             "List of Annalise findings",
             "Embedded Report",
             "Link to Report Folder",
-            "Link to Secondary Capture Folder"
+            "Link to Secondary Capture Folder",
+            "Comments"
         ]
 
         # Write column headings to the first row
@@ -104,8 +105,11 @@ def generate_excel_report(accessions):
         # Directory path
         pwd = os.getcwd()
 
+        final_row_count_of_successful_accession = 1
+
         # Iterate over accessions
         for row_num, accession_number in enumerate(accessions, start=1):
+            final_row_count_of_successful_accession = row_num
             try:
                 if os.path.exists(os.path.join(txt_report_location, f'{accession_number}.txt')):
                     with open(os.path.join(txt_report_location, f'{accession_number}.txt'), 'r') as file:
@@ -117,8 +121,8 @@ def generate_excel_report(accessions):
                     finding_labels = []
 
                     relevant_findings = \
-                    model_output["classification"]["findings"]["vision"]["study"]["classifications"][
-                        "relevant"]
+                        model_output["classification"]["findings"]["vision"]["study"]["classifications"][
+                            "relevant"]
 
                     def sorting_key(finding):
                         return finding["assignPriorityId"], finding["displayOrder"]
@@ -165,10 +169,10 @@ def generate_excel_report(accessions):
                         if col_num == 3:  # Add hyperlink for the "Link to Report Folder" column
                             # hyperlink_formula = f'=HYPERLINK("{relative_path}", "{relative_path}")'
                             # worksheet.write_formula(row_num, col_num, hyperlink_formula)
-                            worksheet.write_url(row_num, col_num, relative_path, string=link_to_folder,
+                            worksheet.write_url(row_num, col_num, relative_path, string=relative_path,
                                                 cell_format=cell_format)
                         elif col_num == 4:
-                            worksheet.write_url(row_num, col_num, sc_relative_path, string=link_to_sc_folder,
+                            worksheet.write_url(row_num, col_num, sc_relative_path, string=sc_relative_path,
                                                 cell_format=cell_format)
                         elif col_num == 2:
                             logger.info(f'accessions: {accession_number}')
@@ -190,6 +194,25 @@ def generate_excel_report(accessions):
             except Exception as e:
                 logger.error(f'Error processing accession {accession_number}: {e}')
                 raise e
+
+        row_num = final_row_count_of_successful_accession
+        for accession_number, error_message in failed_accessions_dict.items():
+            row_num = row_num + 1
+            new_row_data = [
+                accession_number,  # Accession Number
+                "<No findings present>",
+                "<No text report generated>",
+                "<NA>",
+                "<NA>",
+                error_message  # comment
+            ]
+
+            for col_num, cell_data in enumerate(new_row_data):
+                cell_format = workbook.add_format({
+                    'text_wrap': True,  # wrap text
+                    'valign': 'vcenter'  # vertical alignment to middle
+                })
+                worksheet.write(row_num, col_num, cell_data, cell_format)
 
         # Set column widths and apply text wrap
         for col_num, heading in enumerate(column_headings):
@@ -290,7 +313,7 @@ def main(api_host, client_id, client_secret):
                         json_file = path.join(failed_cxrjsons_location, f"{result['accession']}.json")
                         with open(json_file, 'w') as fp:
                             json.dump(result, fp)
-                        failed_dict[result["accession"]] = result["classification"]
+                        failed_dict[result["accession"]] = result["get_log"]
                 except Exception as e:
                     logger.error(f'Error while processing result: {e}')
                     raise e
@@ -318,11 +341,14 @@ def main(api_host, client_id, client_secret):
 
         logger.info(f'Failed dict : {failed_dict}')
 
+        # accessions = ['58867700', 'demo52401284']
+        # failed_dict = {}
+
         # Generate txt report
         generate_text_report(cxrjsons_location, txt_report_location)
 
         # Generate excel report
-        generate_excel_report(accessions)
+        generate_excel_report(accessions, failed_dict)
 
     except Exception as e:
         logger.error(f'An error occurred in the main function: {e}')
